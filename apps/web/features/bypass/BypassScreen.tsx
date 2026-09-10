@@ -1,0 +1,160 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Check, X } from "lucide-react";
+import {
+  approveBypassRequest,
+  demoBypassRequests,
+  getFirebaseSession,
+  rejectBypassRequest,
+  subscribeToPendingBypasses,
+  type ApprovedBypass,
+  type BypassRequestView
+} from "./api";
+
+function formatReason(reason: string): string {
+  return reason.includes("_")
+    ? reason.toLowerCase().split("_").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ")
+    : reason;
+}
+
+function formatOtp(otp: string): string {
+  return `${otp.slice(0, 3)} ${otp.slice(3)}`;
+}
+
+function secondsRemaining(expiresAt: string): number {
+  return Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 1000));
+}
+
+export function BypassScreen() {
+  const [requests, setRequests] = useState<BypassRequestView[]>(demoBypassRequests);
+  const [selectedId, setSelectedId] = useState(demoBypassRequests[0]?.id ?? "");
+  const [loading, setLoading] = useState(false);
+  const [action, setAction] = useState<"approve" | "reject" | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [approved, setApproved] = useState<ApprovedBypass | null>(null);
+  const [approvedRequest, setApprovedRequest] = useState<BypassRequestView | null>(null);
+  const [remaining, setRemaining] = useState(0);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    let unsubscribe: () => void = () => undefined;
+    let active = true;
+    void getFirebaseSession().then((session) => {
+      if (!active || !session || !session.roles.includes("overseer")) return;
+      setLoading(true);
+      unsubscribe = subscribeToPendingBypasses(
+        session.siteId,
+        (nextRequests) => {
+          setRequests(nextRequests);
+          setSelectedId((current) => nextRequests.some((item) => item.id === current) ? current : nextRequests[0]?.id ?? "");
+          setLoading(false);
+        },
+        (error) => {
+          setMessage(error);
+          setLoading(false);
+        }
+      );
+    });
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!approved) return;
+    const update = () => setRemaining(secondsRemaining(approved.expiresAt));
+    update();
+    const timer = window.setInterval(update, 1000);
+    return () => window.clearInterval(timer);
+  }, [approved]);
+
+  const selected = useMemo(() => requests.find((item) => item.id === selectedId) ?? requests[0], [requests, selectedId]);
+  const removeSelected = useCallback((requestId: string) => setRequests((current) => current.filter((item) => item.id !== requestId)), []);
+
+  const handleApprove = async () => {
+    if (!selected) return;
+    setAction("approve");
+    setMessage("");
+    try {
+      const result = await approveBypassRequest(selected);
+      setApprovedRequest(selected);
+      setApproved(result);
+      removeSelected(selected.id);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Approval failed.");
+    } finally {
+      setAction(null);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!selected || rejectionReason.trim().length < 5) {
+      setMessage("Enter a clear rejection reason of at least five characters.");
+      return;
+    }
+    setAction("reject");
+    setMessage("");
+    try {
+      await rejectBypassRequest(selected, rejectionReason.trim());
+      removeSelected(selected.id);
+      setRejectionReason("");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Rejection failed.");
+    } finally {
+      setAction(null);
+    }
+  };
+
+  const minutes = String(Math.floor(remaining / 60)).padStart(2, "0");
+  const seconds = String(remaining % 60).padStart(2, "0");
+
+  return (
+    <>
+      <header className="pageHeader">
+        <div><h1>Bypass Requests</h1><p>Approved exceptions remain explicit and fully auditable.</p></div>
+        <span className="pendingCount">{requests.length} pending</span>
+      </header>
+      {message ? <p className="message" role="status">{message}</p> : null}
+      <div className="workspaceGrid" id="requests">
+        <section className="requestList" aria-label="Pending bypass requests">
+          <div className="sectionHeading"><div><h2>Approval queue</h2><p>Oldest requests should be reviewed first.</p></div></div>
+          {loading ? <p className="empty">Loading requests...</p> : null}
+          {!loading && requests.length === 0 ? <p className="empty">No bypass requests are waiting for review.</p> : null}
+          {requests.map((request) => (
+            <button className={request.id === selected?.id ? "requestRow selected" : "requestRow"} key={request.id} onClick={() => { setSelectedId(request.id); setRejectionReason(""); setMessage(""); }} type="button">
+              <span className="requestTruck">{request.truckRegistration}</span>
+              <span className="requestMeta">Position #{request.queuePosition} | {request.requestedAt}</span>
+              <span className="requestOfficer">{request.requestedByName}</span>
+              <span className="rowStatus">Pending</span>
+            </button>
+          ))}
+        </section>
+        <section className="requestDetail" aria-live="polite">
+          {selected ? <>
+            <div className="detailHeader"><div><p className="eyebrow">Bypass request {selected.id}</p><h2>{selected.truckRegistration}</h2><p className="driver">Driver: {selected.driverName}</p></div><span className="statusPill">Pending</span></div>
+            <dl className="detailGrid">
+              <div><dt>Current position</dt><dd className="position">#{selected.queuePosition}</dd><span>{selected.trucksAhead} trucks ahead</span></div>
+              <div><dt>Requested by</dt><dd>{selected.requestedByName}</dd></div>
+              <div><dt>Reason</dt><dd>{formatReason(selected.reasonCategory)}</dd></div>
+              <div><dt>Requested</dt><dd>{selected.requestedAt}</dd></div>
+            </dl>
+            <div className="explanation"><span>Explanation</span><p>{selected.explanation}</p></div>
+            <label className="rejectField"><span>Rejection reason</span><textarea onChange={(event) => setRejectionReason(event.target.value)} placeholder="Required only when rejecting" rows={3} value={rejectionReason} /></label>
+            <div className="detailActions">
+              <button className="secondaryButton danger" disabled={action !== null} onClick={handleReject} type="button"><X size={16} />{action === "reject" ? "Rejecting..." : "Reject"}</button>
+              <button className="primaryButton" disabled={action !== null} onClick={handleApprove} type="button"><Check size={16} />{action === "approve" ? "Approving..." : "Approve"}</button>
+            </div>
+          </> : <p className="empty detailEmpty">Select a request when one arrives.</p>}
+        </section>
+      </div>
+      {approved ? <div className="modalBackdrop" role="presentation"><section aria-labelledby="approval-title" aria-modal="true" className="otpDialog" role="dialog">
+        <p className="eyebrow success">Bypass approved</p><h2 id="approval-title">{approvedRequest?.truckRegistration ?? approved.bypassRequestId}</h2>
+        <div className="otpPanel"><span>Authorization code</span><strong>{formatOtp(approved.otp)}</strong><p>{remaining > 0 ? `Valid for ${minutes}:${seconds}` : "Authorization expired"}</p></div>
+        <p className="otpNote">Show this code to the requesting fleet officer. It is displayed once and is bound to this request.</p>
+        <button className="darkButton" onClick={() => { setApproved(null); setApprovedRequest(null); }} type="button">Back to approvals</button>
+      </section></div> : null}
+    </>
+  );
+}

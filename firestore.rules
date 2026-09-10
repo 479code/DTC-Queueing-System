@@ -1,0 +1,136 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc(siteId) {
+      return get(/databases/$(database)/documents/sites/$(siteId)/users/$(request.auth.uid));
+    }
+
+    function activeSiteUser(siteId) {
+      return signedIn()
+        && userDoc(siteId).data.isActive == true
+        && userDoc(siteId).data.siteId == siteId;
+    }
+
+    function hasRole(siteId, role) {
+      return activeSiteUser(siteId)
+        && role in userDoc(siteId).data.roles;
+    }
+
+    function isOperationsRole(siteId) {
+      return hasRole(siteId, "programmingOfficer")
+        || hasRole(siteId, "overseer")
+        || hasRole(siteId, "management")
+        || hasRole(siteId, "auditor")
+        || hasRole(siteId, "administrator");
+    }
+
+    match /sites/{siteId} {
+      allow read: if activeSiteUser(siteId);
+      allow write: if false;
+
+      match /users/{userId} {
+        allow read: if activeSiteUser(siteId)
+          && (request.auth.uid == userId || hasRole(siteId, "administrator"));
+        allow write: if false;
+
+        match /devices/{deviceId} {
+          allow read, write: if false;
+        }
+      }
+
+      match /trucks/{truckId} {
+        allow read: if isOperationsRole(siteId)
+          || (
+            hasRole(siteId, "fleetOfficer")
+            && resource.data.assignedFleetOfficerId == request.auth.uid
+          );
+        allow write: if false;
+      }
+
+      match /queueCycles/{cycleId} {
+        allow read: if isOperationsRole(siteId)
+          || (
+            hasRole(siteId, "fleetOfficer")
+            && resource.data.fleetOfficerId == request.auth.uid
+          );
+        allow write: if false;
+      }
+
+      match /programmingBatches/{batchId} {
+        allow read: if isOperationsRole(siteId);
+        allow write: if false;
+
+        match /items/{itemId} {
+          allow read: if isOperationsRole(siteId);
+          allow write: if false;
+        }
+      }
+
+      match /bypassRequests/{requestId} {
+        allow read: if hasRole(siteId, "overseer")
+          || hasRole(siteId, "management")
+          || hasRole(siteId, "auditor")
+          || hasRole(siteId, "administrator")
+          || (
+            hasRole(siteId, "fleetOfficer")
+            && resource.data.fleetOfficerId == request.auth.uid
+          );
+        allow write: if false;
+      }
+
+      match /bypassAuthorizations/{authorizationId} {
+        allow read: if hasRole(siteId, "overseer")
+          || hasRole(siteId, "auditor")
+          || hasRole(siteId, "administrator");
+        allow write: if false;
+      }
+
+      match /insuranceRecords/{insuranceRecordId} {
+        allow read: if isOperationsRole(siteId)
+          || hasRole(siteId, "fleetOfficer");
+        allow write: if false;
+      }
+
+      match /dispatchImports/{importId} {
+        allow read: if isOperationsRole(siteId);
+        allow write: if false;
+
+        match /rows/{rowId} {
+          allow read: if isOperationsRole(siteId);
+          allow write: if false;
+        }
+      }
+
+      match /dispatchRecords/{recordId} {
+        allow read: if isOperationsRole(siteId);
+        allow write: if false;
+      }
+
+      match /auditEvents/{eventId} {
+        allow read: if hasRole(siteId, "management")
+          || hasRole(siteId, "auditor")
+          || hasRole(siteId, "administrator");
+        allow write: if false;
+      }
+
+      match /dailyMetrics/{metricId} {
+        allow read: if activeSiteUser(siteId);
+        allow write: if false;
+      }
+
+      match /notifications/{notificationId} {
+        allow read: if activeSiteUser(siteId)
+          && resource.data.userId == request.auth.uid;
+        allow update: if activeSiteUser(siteId)
+          && resource.data.userId == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["readAt"]);
+        allow create, delete: if false;
+      }
+    }
+  }
+}

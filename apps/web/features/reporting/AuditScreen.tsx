@@ -1,0 +1,42 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { Download, Search } from "lucide-react";
+import { downloadAuditCsv, subscribeToAuditEvents, type AuditEventView } from "./api";
+
+function eventLabel(eventType: string): string {
+  return eventType.toLowerCase().split("_").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
+}
+
+function recordReference(event: AuditEventView): string {
+  return event.dispatchImportId ?? event.programmingBatchId ?? event.truckId ?? event.queueCycleId ?? "System record";
+}
+
+function detail(event: AuditEventView): string {
+  const values = Object.entries(event.metadata).slice(0, 2).map(([key, value]) => `${key.replaceAll("_", " ")}: ${String(value)}`);
+  return values.join(" | ") || "No additional detail";
+}
+
+export function AuditScreen({ siteId, demoMode }: { siteId: string; demoMode: boolean }) {
+  const [events, setEvents] = useState<AuditEventView[]>([]);
+  const [filter, setFilter] = useState("ALL");
+  const [search, setSearch] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => subscribeToAuditEvents(siteId, demoMode, setEvents, setError), [demoMode, siteId]);
+  const eventTypes = useMemo(() => [...new Set(events.map((event) => event.eventType))].sort(), [events]);
+  const visibleEvents = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return events.filter((event) => {
+      const matchesFilter = filter === "ALL" || event.eventType === filter;
+      const searchable = `${event.eventType} ${event.actorUserId} ${recordReference(event)} ${detail(event)}`.toLowerCase();
+      return matchesFilter && (!term || searchable.includes(term));
+    });
+  }, [events, filter, search]);
+
+  return <>
+    <header className="pageHeader"><div><h1>Audit log</h1><p>Immutable record of operational actions and system decisions.</p></div><button className="secondaryButton commandButton" disabled={visibleEvents.length === 0} onClick={() => downloadAuditCsv(visibleEvents)} type="button"><Download size={16} /> Export CSV</button></header>
+    {error ? <p className="message" role="alert">{error}</p> : null}
+    <section className="dataPanel"><div className="tableToolbar"><label className="searchField"><Search size={16} /><span className="visuallyHidden">Search audit log</span><input onChange={(event) => setSearch(event.target.value)} placeholder="Search event, actor, or record" value={search} /></label><select aria-label="Filter audit events" onChange={(event) => setFilter(event.target.value)} value={filter}><option value="ALL">All events</option>{eventTypes.map((eventType) => <option key={eventType} value={eventType}>{eventLabel(eventType)}</option>)}</select><span className="recordCount">{visibleEvents.length} events</span></div><div className="tableScroll"><table className="dataTable auditTable"><thead><tr><th>Time</th><th>Event</th><th>Actor</th><th>Record</th><th>Detail</th></tr></thead><tbody>{visibleEvents.map((event) => <tr key={event.id}><td>{event.createdAt}</td><td><strong>{eventLabel(event.eventType)}</strong></td><td>{event.actorUserId}</td><td>{recordReference(event)}</td><td>{detail(event)}</td></tr>)}</tbody></table>{visibleEvents.length === 0 ? <p className="empty">No audit events match these filters.</p> : null}</div></section>
+  </>;
+}

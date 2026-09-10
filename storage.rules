@@ -1,0 +1,56 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function hasRole(role) {
+      return signedIn() && request.auth.token.roles != null && role in request.auth.token.roles;
+    }
+
+    function hasSite(siteId) {
+      return signedIn() && request.auth.token.siteId == siteId;
+    }
+
+    function canUseDispatch(siteId) {
+      return hasSite(siteId)
+        && (
+          hasRole("programmingOfficer")
+          || hasRole("management")
+          || hasRole("auditor")
+          || hasRole("administrator")
+        );
+    }
+
+    function canUploadDispatch(siteId) {
+      return hasSite(siteId)
+        && (hasRole("programmingOfficer") || hasRole("administrator"));
+    }
+
+    function canUseInsurance(siteId) {
+      return hasSite(siteId) && hasRole("administrator");
+    }
+
+    match /sites/{siteId}/dispatch/{year}/{month}/{importId}/{fileName} {
+      allow read: if canUseDispatch(siteId);
+      allow create: if canUploadDispatch(siteId)
+        && request.resource.size < 20 * 1024 * 1024
+        && request.resource.contentType == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        && fileName.matches(".*\\.[xX][lL][sS][xX]$");
+      allow update, delete: if false;
+    }
+
+    match /sites/{siteId}/insurance/{truckId}/{insuranceRecordId}/{fileName} {
+      allow read: if hasSite(siteId);
+      allow create: if canUseInsurance(siteId)
+        && request.resource.size < 10 * 1024 * 1024;
+      allow update, delete: if false;
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

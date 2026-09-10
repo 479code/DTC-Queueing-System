@@ -1,0 +1,29 @@
+{
+  "name": "functions",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "test": "tsc && node --test tests/batchTrucks.test.mjs tests/dispatchReconciliation.test.mjs tests/insuranceStatus.test.mjs tests/metricsSummary.test.mjs tests/otp.test.mjs tests/programmingAtc.test.mjs tests/queuePosition.test.mjs tests/pushPayload.test.mjs",
+    "serve": "corepack pnpm build && firebase emulators:start --only functions,firestore,auth,storage"
+  },
+  "dependencies": {
+    "@refinery/shared": "workspace:*",
+    "@refinery/types": "workspace:*",
+    "@refinery/validation": "workspace:*",
+    "firebase-admin": "^12.5.0",
+    "firebase-functions": "^5.1.1",
+    "read-excel-file": "9.2.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": "20"
+  }
+}

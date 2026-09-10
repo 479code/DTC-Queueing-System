@@ -1,0 +1,46 @@
+:root {
+  color-scheme: light;
+  --background: #f5f7fa;
+  --surface: #ffffff;
+  --text: #171f29;
+  --muted: #6b7887;
+  --border: #dbe0e8;
+  --primary: #268c57;
+  --critical: #ba2e2e;
+  --warning: #bf7314;
+  --warning-soft: #fff5db;
+  --success-soft: #e5f7ed;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--background);
+  color: var(--text);
+  font-family: Inter, Arial, Helvetica, sans-serif;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #9cc6ac;
+  outline-offset: 2px;
+}

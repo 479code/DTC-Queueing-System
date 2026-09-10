@@ -1,0 +1,16 @@
+node_modules/
+.pnpm-store/
+.next/
+.expo/
+.turbo/
+dist/
+build/
+functions/lib/
+coverage/
+.env
+.env.*
+!.env.example
+firebase-emulator-data/
+*.local
+*.log
+*.tsbuildinfo
