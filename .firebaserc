@@ -1,7 +1,7 @@
 {
   "projects": {
-    "default": "replace-with-dev-firebase-project-id",
-    "development": "replace-with-dev-firebase-project-id",
+    "default": "refinery-queue-dev",
+    "development": "refinery-queue-dev",
     "staging": "replace-with-staging-firebase-project-id",
     "production": "replace-with-production-firebase-project-id"
   }
