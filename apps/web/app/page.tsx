@@ -70,12 +70,13 @@ const navigation: NavigationItem[] = [
   { id: "audit", label: "Audit Log", icon: FileSearch }
 ];
 
+// Derived from the navigation so a new screen never falls back to Trucks.
+const viewIds: View[] = [...navigation.map((item) => item.id), "preview"];
+
 function viewFromHash(): View {
   if (typeof window === "undefined") return "trucks";
   const value = window.location.hash.slice(1);
-  return ["overview", "staff", "my-fleet", "trucks", "insurance", "queue", "programming", "orders", "bypass", "audit", "preview"].includes(value)
-    ? (value as View)
-    : "trucks";
+  return viewIds.includes(value as View) ? (value as View) : "trucks";
 }
 
 export default function Page() {
