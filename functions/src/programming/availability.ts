@@ -10,7 +10,10 @@ import { writeAuditEvent } from "../shared/audit.js";
 import { writeNotification } from "../shared/notifications.js";
 import { selectProgrammingBatch } from "./selectProgrammingBatch.js";
 
-const availabilityWindowMs = 60 * 60 * 1000;
+// Operationally one hour. AVAILABILITY_WINDOW_MINUTES only exists so the rule
+// can be exercised end to end without waiting an hour, and is clamped.
+const availabilityWindowMinutes = Math.min(240, Math.max(1, Number(process.env.AVAILABILITY_WINDOW_MINUTES ?? 60)));
+const availabilityWindowMs = availabilityWindowMinutes * 60 * 1000;
 
 function hasValidInsurance(truck: Record<string, unknown>): boolean {
   return truck.latestInsuranceStatus === "VALID" || truck.latestInsuranceStatus === "EXPIRING_SOON";
@@ -53,7 +56,7 @@ export const startAvailabilityBatch = validatedCall(startAvailabilityBatchInputS
       createdBy: context.uid,
       createdAt: FieldValue.serverTimestamp(),
       availabilityStartedAt: FieldValue.serverTimestamp(),
-      availabilityWindowMinutes: 60,
+      availabilityWindowMinutes,
       includedBypassAuthorizationIds: data.includeBypassAuthorizationIds ?? []
     });
     for (const item of selected) {

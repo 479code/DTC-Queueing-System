@@ -7,6 +7,10 @@ The required columns are `ATC NO` and `SALES ORDER NO`. Preserve the source
 file in the private Railway Bucket and use the import result to resolve any
 duplicate or malformed ATC before programming begins.
 
+`AVAILABILITY_WINDOW_MINUTES` on the API service overrides the one-hour window
+for rehearsal only, clamped between 1 and 240 minutes. Leave it unset in
+production so the agreed one-hour rule applies.
+
 The Railway worker checks availability requests continuously. After one hour,
 it opens the slot to the next eligible FIFO truck. When that next truck
 confirms, the timed-out truck is returned to the back of the list
