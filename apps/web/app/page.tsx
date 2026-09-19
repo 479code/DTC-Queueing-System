@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useState } from "react";
 import {
   BarChart3,
+  CheckCircle2,
   ClipboardCheck,
   FileSearch,
   ListOrdered,
@@ -40,6 +41,7 @@ import {
   type TruckView
 } from "../features/operations/api";
 import { InsuranceScreen } from "../features/operations/InsuranceScreen";
+import { ProgrammedScreen } from "../features/operations/ProgrammedScreen";
 import { ProgrammingScreen } from "../features/operations/ProgrammingScreen";
 import { QueueScreen } from "../features/operations/QueueScreen";
 import { TrucksScreen } from "../features/operations/TrucksScreen";
@@ -60,6 +62,7 @@ const navigation: NavigationItem[] = [
   { id: "staff", label: "Staff Access", icon: UsersRound },
   { id: "queue", label: "Live Queue", icon: ListOrdered },
   { id: "programming", label: "Programming", icon: ClipboardCheck },
+  { id: "programmed", label: "Programmed", icon: CheckCircle2 },
   { id: "orders", label: "Orders & ATCs", icon: FileSearch },
   { id: "trucks", label: "Trucks", icon: Truck },
   { id: "insurance", label: "Insurance", icon: ShieldCheck },
@@ -235,6 +238,7 @@ export default function Page() {
         {activeView === "insurance" ? <InsuranceScreen demoMode={demoMode} onTrucksChange={setTrucks} siteId={siteId} trucks={trucks} /> : null}
         {activeView === "queue" ? <QueueScreen queue={queue} /> : null}
         {activeView === "programming" ? <ProgrammingScreen queue={queue} siteId={siteId} /> : null}
+        {activeView === "programmed" ? <ProgrammedScreen siteId={siteId} /> : null}
         {activeView === "orders" ? <OrdersScreen demoMode={demoMode} siteId={siteId} /> : null}
         {activeView === "bypass" ? <BypassScreen /> : null}
         {activeView === "audit" ? <AuditScreen demoMode={demoMode} siteId={siteId} /> : null}

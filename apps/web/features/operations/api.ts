@@ -3,6 +3,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  limit,
   onSnapshot,
   orderBy,
   query,
@@ -490,6 +491,77 @@ export type ImportedOrderOption = {
   volume?: number;
   expectedDeliveryDate?: string;
 };
+
+export type ProgrammedTruckView = {
+  id: string;
+  truckId: string;
+  registrationNumber: string;
+  driverName: string;
+  fleetOfficerName: string;
+  status: "PROGRAMMED" | "DISPATCHED";
+  programmingType: string;
+  atcNo: string;
+  salesOrderNo: string;
+  customerName: string;
+  batchId: string;
+  programmedAt: string;
+  programmedAtMillis: number;
+  dispatchConfirmedAt: string;
+};
+
+export function subscribeToProgrammedTrucks(
+  siteId: string,
+  onData: (records: ProgrammedTruckView[]) => void,
+  onError: (message: string) => void
+): Unsubscribe {
+  if (!db) {
+    onData([]);
+    return () => undefined;
+  }
+
+  return onSnapshot(
+    query(
+      collection(db, "sites", siteId, "queueCycles"),
+      where("status", "in", ["PROGRAMMED", "DISPATCHED"]),
+      orderBy("programmedAt", "desc"),
+      limit(200)
+    ),
+    (snapshot) => {
+      void Promise.all(snapshot.docs.map(async (cycle) => {
+        const data = cycle.data();
+        const truckId = String(data.truckId);
+        const orderId = typeof data.orderId === "string" ? data.orderId : "";
+        // Only programming officers and administrators may read the imported order
+        // workbook, so other roles still see the truck, ATC and dispatch state.
+        const [truckSnapshot, orderSnapshot] = await Promise.all([
+          getDoc(doc(db!, "sites", siteId, "trucks", truckId)),
+          orderId ? getDoc(doc(db!, "sites", siteId, "orders", orderId)).catch(() => null) : Promise.resolve(null)
+        ]);
+        const truck = truckSnapshot.data() ?? {};
+        const order = orderSnapshot?.data() ?? {};
+        return {
+          id: cycle.id,
+          truckId,
+          registrationNumber: String(truck.registrationNumber ?? truckId),
+          driverName: String(truck.driverName ?? "Driver not recorded"),
+          fleetOfficerName: String(truck.assignedFleetOfficerName ?? data.fleetOfficerId ?? "Not assigned"),
+          status: String(data.status) as "PROGRAMMED" | "DISPATCHED",
+          programmingType: String(data.programmingType ?? "FIFO"),
+          atcNo: String(data.atcNo ?? order.atcNo ?? "Not recorded"),
+          salesOrderNo: String(order.salesOrderNo ?? "--"),
+          customerName: String(order.dprpCustomerName ?? order.customerName ?? order.receivingCustomer ?? "--"),
+          batchId: String(data.programmingBatchId ?? ""),
+          programmedAt: formatTimestamp(data.programmedAt, true),
+          programmedAtMillis: timestampMillis(data.programmedAt),
+          dispatchConfirmedAt: data.dispatchConfirmedAt ? formatTimestamp(data.dispatchConfirmedAt, true) : ""
+        } satisfies ProgrammedTruckView;
+      }))
+        .then(onData)
+        .catch((error: unknown) => onError(error instanceof Error ? error.message : "Unable to load programmed trucks."));
+    },
+    (error) => onError(error.message)
+  );
+}
 
 export type AvailabilityBatch = {
   batchId: string;
