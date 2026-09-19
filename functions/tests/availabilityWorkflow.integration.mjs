@@ -5,6 +5,7 @@ const { Timestamp } = await import("firebase-admin/firestore");
 const { db } = await import("../lib/shared/firebase.js");
 const { startAvailabilityBatch, confirmTruckAvailability, expireAvailabilityRequests } = await import("../lib/programming/availability.js");
 const { confirmProgrammingWithOrders } = await import("../lib/programming/confirmProgrammingWithOrders.js");
+const { confirmTruckDispatch } = await import("../lib/dispatch/confirmTruckDispatch.js");
 
 const siteId = "availability-site";
 const fleetOfficerId = "availability-fleet-officer";
@@ -67,13 +68,12 @@ test("availability batch confirms, expires, replaces from FIFO, re-queues the ex
   }));
   assert.equal(programmed.confirmedSize, 2);
 
-  const [finalA, finalC, order1, order2, batch, auditEvents] = await Promise.all([
+  const [finalA, finalC, order1, order2, batch] = await Promise.all([
     cycleRef("truck-a-cycle").get(),
     cycleRef("truck-c-cycle").get(),
     orderRef("order-1").get(),
     orderRef("order-2").get(),
-    db.doc(`sites/${siteId}/programmingBatches/${started.batchId}`).get(),
-    db.collection(`sites/${siteId}/auditEvents`).get()
+    db.doc(`sites/${siteId}/programmingBatches/${started.batchId}`).get()
   ]);
   assert.equal(finalA.data()?.status, "PROGRAMMED");
   assert.equal(finalA.data()?.atcNo, "0472438");
@@ -83,7 +83,17 @@ test("availability batch confirms, expires, replaces from FIFO, re-queues the ex
   assert.equal(order2.data()?.status, "PROGRAMMED");
   assert.equal(batch.data()?.status, "CONFIRMED");
 
-  const eventTypes = new Set(auditEvents.docs.map((item) => item.data().eventType));
-  ["AVAILABILITY_REQUESTED", "AVAILABILITY_CONFIRMED", "AVAILABILITY_EXPIRED", "QUEUE_REENTERED_AFTER_TIMEOUT", "ORDER_ATC_ASSIGNED", "TRUCK_PROGRAMMED", "PROGRAMMING_BATCH_CONFIRMED"]
+  const dispatched = await confirmTruckDispatch.run(request(programmerId, ["programmingOfficer"], { siteId, queueCycleId: "truck-a-cycle" }));
+  assert.equal(dispatched.status, "DISPATCHED");
+  const [dispatchedCycle, dispatchedTruck] = await Promise.all([cycleRef("truck-a-cycle").get(), truckRef("truck-a").get()]);
+  assert.equal(dispatchedCycle.data()?.status, "DISPATCHED");
+  assert.equal(dispatchedTruck.data()?.currentStatus, "ON_TRIP");
+  assert.equal(dispatchedTruck.data()?.activeCycleId, null);
+  await assert.rejects(() => confirmTruckDispatch.run(request(programmerId, ["programmingOfficer"], { siteId, queueCycleId: "truck-a-cycle" })), /already recorded as dispatched/);
+  await assert.rejects(() => confirmTruckDispatch.run(request(fleetOfficerId, ["fleetOfficer"], { siteId, queueCycleId: "truck-c-cycle" })));
+
+  const auditEventsAfterDispatch = await db.collection(`sites/${siteId}/auditEvents`).get();
+  const eventTypes = new Set(auditEventsAfterDispatch.docs.map((item) => item.data().eventType));
+  ["DISPATCH_CONFIRMED", "AVAILABILITY_REQUESTED", "AVAILABILITY_CONFIRMED", "AVAILABILITY_EXPIRED", "QUEUE_REENTERED_AFTER_TIMEOUT", "ORDER_ATC_ASSIGNED", "TRUCK_PROGRAMMED", "PROGRAMMING_BATCH_CONFIRMED"]
     .forEach((eventType) => assert.ok(eventTypes.has(eventType), `missing ${eventType}`));
 });

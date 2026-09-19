@@ -563,6 +563,11 @@ export function subscribeToProgrammedTrucks(
   );
 }
 
+export async function confirmTruckDispatch(input: { siteId: string; queueCycleId: string }): Promise<{ queueCycleId: string; status: string }> {
+  if (!functions || !auth?.currentUser) return { queueCycleId: input.queueCycleId, status: "DISPATCHED" };
+  return callOperationalApi<typeof input, { queueCycleId: string; status: string }>("confirmTruckDispatch", input);
+}
+
 export type AvailabilityBatch = {
   batchId: string;
   humanCode: string;

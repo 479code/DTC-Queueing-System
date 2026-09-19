@@ -238,7 +238,7 @@ export default function Page() {
         {activeView === "insurance" ? <InsuranceScreen demoMode={demoMode} onTrucksChange={setTrucks} siteId={siteId} trucks={trucks} /> : null}
         {activeView === "queue" ? <QueueScreen queue={queue} /> : null}
         {activeView === "programming" ? <ProgrammingScreen queue={queue} siteId={siteId} /> : null}
-        {activeView === "programmed" ? <ProgrammedScreen siteId={siteId} /> : null}
+        {activeView === "programmed" ? <ProgrammedScreen canConfirmDispatch={isDemoExperience || roles.some((role) => ["programmingOfficer", "administrator"].includes(role))} siteId={siteId} /> : null}
         {activeView === "orders" ? <OrdersScreen demoMode={demoMode} siteId={siteId} /> : null}
         {activeView === "bypass" ? <BypassScreen /> : null}
         {activeView === "audit" ? <AuditScreen demoMode={demoMode} siteId={siteId} /> : null}

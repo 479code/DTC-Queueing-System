@@ -15,6 +15,7 @@ export { registerDeviceToken } from "./notifications/registerDeviceToken.js";
 export { unregisterDeviceToken } from "./notifications/unregisterDeviceToken.js";
 export { deliverNotification, deliverNotificationForRecord } from "./notifications/deliverNotification.js";
 export { uploadDispatchReport } from "./dispatch/uploadDispatchReport.js";
+export { confirmTruckDispatch } from "./dispatch/confirmTruckDispatch.js";
 export { processDispatchImport } from "./dispatch/processDispatchImport.js";
 export { uploadOrderWorkbook, processOrderImport, listAvailableOrders } from "./orders/orderImport.js";
 export { updateInsurance } from "./insurance/updateInsurance.js";

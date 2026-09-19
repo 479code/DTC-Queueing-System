@@ -52,6 +52,11 @@ export const confirmTruckAvailabilityInputSchema = z.object({
   queueCycleId: documentIdSchema
 });
 
+export const confirmTruckDispatchInputSchema = z.object({
+  siteId: siteIdSchema,
+  queueCycleId: documentIdSchema
+});
+
 export const getAvailabilityBatchInputSchema = z.object({
   siteId: siteIdSchema,
   batchId: documentIdSchema

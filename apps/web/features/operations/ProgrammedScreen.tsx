@@ -2,14 +2,28 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, ClipboardCheck, Search, Truck } from "lucide-react";
-import { subscribeToProgrammedTrucks, type ProgrammedTruckView } from "./api";
+import { confirmTruckDispatch, subscribeToProgrammedTrucks, type ProgrammedTruckView } from "./api";
 import { StatusBadge } from "./ui";
 
-export function ProgrammedScreen({ siteId }: { siteId: string }) {
+export function ProgrammedScreen({ siteId, canConfirmDispatch }: { siteId: string; canConfirmDispatch: boolean }) {
   const [records, setRecords] = useState<ProgrammedTruckView[]>([]);
   const [queryText, setQueryText] = useState("");
   const [filter, setFilter] = useState("ALL");
   const [message, setMessage] = useState("");
+  const [confirming, setConfirming] = useState("");
+  const [notice, setNotice] = useState("");
+
+  const confirmDispatch = async (record: ProgrammedTruckView) => {
+    setConfirming(record.id); setNotice("");
+    try {
+      await confirmTruckDispatch({ siteId, queueCycleId: record.id });
+      setNotice(`${record.registrationNumber} recorded as dispatched on ATC ${record.atcNo}.`);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Unable to record the dispatch.");
+    } finally {
+      setConfirming("");
+    }
+  };
 
   useEffect(() => subscribeToProgrammedTrucks(siteId, (data) => { setRecords(data); setMessage(""); }, setMessage), [siteId]);
 
@@ -24,6 +38,7 @@ export function ProgrammedScreen({ siteId }: { siteId: string }) {
   return <>
     <header className="queueCommandHeader"><div><p className="eyebrow">Programming record</p><h1>Programmed trucks</h1><p>Every truck that has left the queue with an imported order and ATC, and whether the refinery has confirmed dispatch.</p></div><span className="queueLiveIndicator"><i />Updates live</span></header>
     {message ? <p className="connectionMessage">Some programming records are temporarily unavailable.</p> : null}
+    {notice ? <p className={notice.startsWith("Unable") ? "message" : "successMessage"} role="status">{notice}</p> : null}
     <section className="queueStatusStrip" aria-label="Programming summary">
       <div><ClipboardCheck size={18} /><span>Awaiting dispatch</span><strong>{programmedCount}</strong></div><i />
       <div><CheckCircle2 size={18} /><span>Dispatched</span><strong>{dispatchedCount}</strong></div><i />
@@ -31,7 +46,7 @@ export function ProgrammedScreen({ siteId }: { siteId: string }) {
       <div><ClipboardCheck size={18} /><span>Records shown</span><strong>{visible.length}</strong></div>
     </section>
     <section className="dataPanel queueRegisterPanel">
-      <div className="queueRegisterHeading"><div><span>Programming register</span><h2>Most recently programmed first</h2><p>ATC numbers come from the imported order workbook. This register is read only.</p></div><span>Read only</span></div>
+      <div className="queueRegisterHeading"><div><span>Programming register</span><h2>Most recently programmed first</h2><p>ATC numbers come from the imported order workbook. Confirming dispatch records that the truck has loaded and left.</p></div><span>{canConfirmDispatch ? "Dispatch confirmation" : "Read only"}</span></div>
       <div className="tableToolbar queueToolbar">
         <label className="searchField"><Search size={16} /><span className="visuallyHidden">Search programmed trucks</span><input onChange={(event) => setQueryText(event.target.value)} placeholder="Search truck, ATC, order or customer" value={queryText} /></label>
         <select aria-label="Filter by dispatch state" onChange={(event) => setFilter(event.target.value)} value={filter}>
@@ -40,12 +55,13 @@ export function ProgrammedScreen({ siteId }: { siteId: string }) {
         <span className="recordCount">{visible.length} records</span>
       </div>
       <div className="tableScroll"><table className="dataTable queueTable">
-        <thead><tr><th>Truck</th><th>Driver</th><th>ATC no.</th><th>Sales order</th><th>Customer</th><th>Programmed</th><th>State</th></tr></thead>
+        <thead><tr><th>Truck</th><th>Driver</th><th>ATC no.</th><th>Sales order</th><th>Customer</th><th>Programmed</th><th>State</th>{canConfirmDispatch ? <th><span className="visuallyHidden">Dispatch</span></th> : null}</tr></thead>
         <tbody>{visible.map((record) => <tr key={record.id}>
           <td><strong>{record.registrationNumber}</strong><span>{record.programmingType === "BYPASS" ? "Approved bypass" : "FIFO"}</span></td>
           <td>{record.driverName}</td><td><strong>{record.atcNo}</strong></td><td>{record.salesOrderNo}</td><td>{record.customerName}</td>
           <td>{record.programmedAt}{record.dispatchConfirmedAt ? <span>Dispatched {record.dispatchConfirmedAt}</span> : null}</td>
           <td><StatusBadge value={record.status} /></td>
+          {canConfirmDispatch ? <td>{record.status === "PROGRAMMED" ? <button className="primaryButton" disabled={confirming !== ""} onClick={() => void confirmDispatch(record)} type="button">{confirming === record.id ? "Recording..." : "Confirm dispatch"}</button> : null}</td> : null}
         </tr>)}</tbody>
       </table>{visible.length === 0 ? <p className="empty">No truck has been programmed yet.</p> : null}</div>
     </section>
