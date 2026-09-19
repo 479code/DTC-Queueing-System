@@ -22,13 +22,15 @@ export function OverviewScreen({
   demoMode,
   queue,
   trucks,
-  canRecalculate
+  canRecalculate,
+  canViewAuditEvents
 }: {
   siteId: string;
   demoMode: boolean;
   queue: QueueEntryView[];
   trucks: TruckView[];
   canRecalculate: boolean;
+  canViewAuditEvents: boolean;
 }) {
   const [metrics, setMetrics] = useState<DailyMetricsView | null>(null);
   const [events, setEvents] = useState<AuditEventView[]>([]);
@@ -36,7 +38,11 @@ export function OverviewScreen({
   const [error, setError] = useState("");
 
   useEffect(() => subscribeToDailyMetrics(siteId, demoMode, setMetrics, setError), [demoMode, siteId]);
-  useEffect(() => subscribeToAuditEvents(siteId, demoMode, setEvents, setError), [demoMode, siteId]);
+  // Only management, auditors and administrators may read audit events.
+  useEffect(() => {
+    if (!canViewAuditEvents) return;
+    return subscribeToAuditEvents(siteId, demoMode, setEvents, setError);
+  }, [canViewAuditEvents, demoMode, siteId]);
 
   const attentionTrucks = useMemo(
     () => trucks.filter((truck) => truck.insuranceStatus === "EXPIRED" || truck.insuranceStatus === "EXPIRING_SOON").slice(0, 4),
@@ -75,7 +81,7 @@ export function OverviewScreen({
 
       <div className="overviewGrid">
         <section className="dataPanel overviewPanel overviewQueuePanel"><div className="overviewPanelHeading"><div><span>Canonical order</span><h2>Next in FIFO</h2><p>The queue is shown exactly as it will be considered for programming.</p></div><a className="textButton" href="#queue">View queue</a></div><div className="overviewQueue">{queue.slice(0, 5).map((item) => <div key={item.id}><strong>#{item.position}</strong><span><b>{item.registrationNumber}</b><small>{item.driverName} | {item.fleetOfficerName}</small></span><em>{item.queueEnteredAt}</em></div>)}{queue.length === 0 ? <p className="empty">No trucks are currently queued.</p> : null}</div></section>
-        <section className="dataPanel overviewPanel overviewExceptionsPanel"><div className="overviewPanelHeading"><div><span>Needs review</span><h2>Recent exceptions</h2><p>Items requiring attention or a recorded decision.</p></div><a className="textButton" href="#audit">Audit log</a></div><div className="overviewEvents">{exceptions.map((event) => <div key={event.id}><AlertTriangle size={16} /><span><b>{eventLabel(event.eventType)}</b><small>{event.actorUserId} | {event.createdAt}</small></span></div>)}{exceptions.length === 0 ? <p className="empty">No recent exceptions.</p> : null}</div></section>
+        {canViewAuditEvents ? <section className="dataPanel overviewPanel overviewExceptionsPanel"><div className="overviewPanelHeading"><div><span>Needs review</span><h2>Recent exceptions</h2><p>Items requiring attention or a recorded decision.</p></div><a className="textButton" href="#audit">Audit log</a></div><div className="overviewEvents">{exceptions.map((event) => <div key={event.id}><AlertTriangle size={16} /><span><b>{eventLabel(event.eventType)}</b><small>{event.actorUserId} | {event.createdAt}</small></span></div>)}{exceptions.length === 0 ? <p className="empty">No recent exceptions.</p> : null}</div></section> : null}
         <section className="dataPanel overviewPanel overviewWide overviewInsurancePanel"><div className="overviewPanelHeading"><div><span>Fleet eligibility</span><h2>Insurance attention</h2><p>Expiring or expired fleet insurance that could affect queue eligibility.</p></div><a className="textButton" href="#insurance">Insurance</a></div><div className="overviewInsurance">{attentionTrucks.map((truck) => <div key={truck.id}><span><b>{truck.registrationNumber}</b><small>{truck.driverName} | Expires {truck.insuranceExpiry}</small></span><StatusBadge value={truck.insuranceStatus} /></div>)}{attentionTrucks.length === 0 ? <p className="empty">No insurance attention items.</p> : null}</div></section>
       </div>
     </> : null}

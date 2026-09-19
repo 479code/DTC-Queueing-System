@@ -232,7 +232,7 @@ export default function Page() {
       <section className="content">
         {dataMessage ? <p className="connectionMessage">{dataMessage}</p> : null}
         {activeView === "my-fleet" ? <FleetWorkspace demoMode={demoMode} fleetOfficerId={userId} onTrucksChange={setTrucks} queue={queue} siteId={siteId} trucks={trucks} /> : null}
-        {activeView === "overview" ? <OverviewScreen canRecalculate={isDemoExperience || roles.some((role) => ["management", "administrator"].includes(role))} demoMode={demoMode} queue={queue} siteId={siteId} trucks={trucks} /> : null}
+        {activeView === "overview" ? <OverviewScreen canViewAuditEvents={isDemoExperience || roles.some((role) => ["management", "auditor", "administrator"].includes(role))} canRecalculate={isDemoExperience || roles.some((role) => ["management", "administrator"].includes(role))} demoMode={demoMode} queue={queue} siteId={siteId} trucks={trucks} /> : null}
         {activeView === "staff" ? <StaffAccessScreen currentUserId={userId} siteId={siteId} /> : null}
         {activeView === "trucks" ? <TrucksScreen demoMode={demoMode} officers={officers} onTrucksChange={setTrucks} siteId={siteId} trucks={trucks} /> : null}
         {activeView === "insurance" ? <InsuranceScreen demoMode={demoMode} onTrucksChange={setTrucks} siteId={siteId} trucks={trucks} /> : null}
