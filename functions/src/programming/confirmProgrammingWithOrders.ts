@@ -29,12 +29,21 @@ export const confirmProgrammingWithOrders = validatedCall(confirmProgrammingWith
     if (new Set(orderIds).size !== orderIds.length) failedPrecondition("An imported order can only be assigned once.");
     const orderSnapshots = await transaction.getAll(...orderIds.map((orderId) => ordersRef(data.siteId).doc(orderId)));
     const orders = new Map(orderSnapshots.map((snapshot) => [snapshot.id, snapshot]));
+    // Firestore transactions require every read to happen before the first write.
+    const cycleSnapshots = await transaction.getAll(...items.map((item) => queueCyclesRef(data.siteId).doc(String(item.queueCycleId))));
+    const cycles = new Map(cycleSnapshots.map((snapshot) => [snapshot.id, snapshot]));
     for (const item of items) {
       const orderId = assignmentByCycle.get(String(item.queueCycleId))!;
       const orderSnapshot = orders.get(orderId);
       if (!orderSnapshot?.exists || orderSnapshot.data()?.status !== "AVAILABLE") failedPrecondition("Every selected order must still be available.");
+      const cycleSnapshot = cycles.get(String(item.queueCycleId));
+      if (!cycleSnapshot?.exists || cycleSnapshot.data()?.status !== "READY_FOR_PROGRAMMING") failedPrecondition("Every truck must still have confirmed availability.");
+    }
+    for (const item of items) {
+      const orderId = assignmentByCycle.get(String(item.queueCycleId))!;
+      const orderSnapshot = orders.get(orderId)!;
       const cycleRef = queueCyclesRef(data.siteId).doc(String(item.queueCycleId));
-      const cycleSnapshot = await transaction.get(cycleRef);
+      const cycleSnapshot = cycles.get(String(item.queueCycleId))!;
       if (!cycleSnapshot.exists || cycleSnapshot.data()?.status !== "READY_FOR_PROGRAMMING") failedPrecondition("Every truck must still have confirmed availability.");
       const atcNo = String(orderSnapshot.data()?.atcNo ?? "").trim().toUpperCase();
       transaction.update(orderSnapshot.ref, { status: "PROGRAMMED", assignedQueueCycleId: String(item.queueCycleId), assignedTruckId: String(item.truckId), programmingBatchId: data.batchId, assignedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
