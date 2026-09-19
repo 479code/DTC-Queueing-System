@@ -2,10 +2,11 @@ import { uploadDispatchReportInputSchema } from "@refinery/validation";
 import { FieldValue } from "firebase-admin/firestore";
 import { validatedCall } from "../shared/callable.js";
 import { requireAnyRole, requireAuth, requireSameSite } from "../shared/auth.js";
-import { db, storage } from "../shared/firebase.js";
+import { db } from "../shared/firebase.js";
 import { dispatchImportsRef } from "../shared/paths.js";
 import { writeAuditEvent } from "../shared/audit.js";
 import { failedPrecondition } from "../shared/errors.js";
+import { getDispatchObjectMetadata } from "./objectStore.js";
 
 export const uploadDispatchReport = validatedCall(
   uploadDispatchReportInputSchema,
@@ -27,12 +28,10 @@ export const uploadDispatchReport = validatedCall(
       failedPrecondition("The uploaded file is not in the expected dispatch import location.");
     }
 
-    const file = storage.bucket().file(data.storagePath);
-    const [exists] = await file.exists();
-    if (!exists) failedPrecondition("The dispatch spreadsheet could not be found in storage.");
+    const metadata = await getDispatchObjectMetadata(data.storagePath);
+    if (!metadata) failedPrecondition("The dispatch spreadsheet could not be found in storage.");
 
-    const [metadata] = await file.getMetadata();
-    const storedSize = Number(metadata.size ?? 0);
+    const storedSize = metadata.fileSize;
     if (storedSize !== data.fileSize || storedSize > 20 * 1024 * 1024) {
       failedPrecondition("The uploaded spreadsheet size does not match the registration request.");
     }
@@ -40,7 +39,7 @@ export const uploadDispatchReport = validatedCall(
     if (data.contentType !== expectedContentType || metadata.contentType !== expectedContentType) {
       failedPrecondition("The uploaded file must be an Excel .xlsx workbook.");
     }
-    if (metadata.metadata?.sha256 !== data.checksum) {
+    if (metadata.checksum !== data.checksum) {
       failedPrecondition("The uploaded spreadsheet checksum does not match the registration request.");
     }
 

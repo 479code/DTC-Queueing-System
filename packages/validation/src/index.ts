@@ -44,6 +44,28 @@ export const confirmProgrammingBatchInputSchema = previewProgrammingBatchInputSc
   })).min(1)
 });
 
+export const startAvailabilityBatchInputSchema = previewProgrammingBatchInputSchema;
+
+export const confirmTruckAvailabilityInputSchema = z.object({
+  siteId: siteIdSchema,
+  batchId: documentIdSchema,
+  queueCycleId: documentIdSchema
+});
+
+export const getAvailabilityBatchInputSchema = z.object({
+  siteId: siteIdSchema,
+  batchId: documentIdSchema
+});
+
+export const confirmProgrammingWithOrdersInputSchema = z.object({
+  siteId: siteIdSchema,
+  batchId: documentIdSchema,
+  orderAssignments: z.array(z.object({
+    queueCycleId: documentIdSchema,
+    orderId: documentIdSchema
+  })).min(1)
+});
+
 export const requestBypassInputSchema = z.object({
   siteId: siteIdSchema,
   truckId: documentIdSchema,
@@ -121,7 +143,35 @@ export const processDispatchImportInputSchema = z.object({
   importId: documentIdSchema
 });
 
+export const uploadOrderWorkbookInputSchema = uploadDispatchReportInputSchema;
+
+export const processOrderImportInputSchema = z.object({
+  siteId: siteIdSchema,
+  importId: documentIdSchema
+});
+
+export const listAvailableOrdersInputSchema = z.object({
+  siteId: siteIdSchema
+});
+
 export const recalculateDailyMetricsInputSchema = z.object({
   siteId: siteIdSchema,
   date: z.string().regex(/^\d{8}$/).optional()
+});
+
+export const setUserAccessInputSchema = z.object({
+  siteId: siteIdSchema,
+  userId: documentIdSchema,
+  name: z.string().trim().min(2).max(120),
+  email: z.string().trim().email().max(254).optional(),
+  roles: z.array(z.enum([
+    "fleetOfficer",
+    "programmingOfficer",
+    "overseer",
+    "management",
+    "auditor",
+    "administrator"
+  ])).min(1).max(6),
+  isActive: z.boolean(),
+  mfaRequired: z.boolean().default(false)
 });

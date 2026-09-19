@@ -52,6 +52,14 @@ export function dispatchRecordsRef(siteId: string) {
   return siteRef(siteId).collection("dispatchRecords");
 }
 
+export function orderImportsRef(siteId: string) {
+  return siteRef(siteId).collection("orderImports");
+}
+
+export function ordersRef(siteId: string) {
+  return siteRef(siteId).collection("orders");
+}
+
 export function dailyMetricsRef(siteId: string) {
   return siteRef(siteId).collection("dailyMetrics");
 }

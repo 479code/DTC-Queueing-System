@@ -5,12 +5,7 @@ import { db } from "../shared/firebase.js";
 import { writeNotification } from "../shared/notifications.js";
 import { queueCyclesRef } from "../shared/paths.js";
 
-export const expireInsurance = onSchedule(
-  {
-    schedule: "every day 00:15",
-    timeZone: "Africa/Lagos"
-  },
-  async () => {
+export async function expireInsuranceRecords(): Promise<void> {
     const now = Timestamp.now();
     const expiredCandidates = await db
       .collectionGroup("trucks")
@@ -81,5 +76,12 @@ export const expireInsurance = onSchedule(
         })
       )
     );
-  }
+}
+
+export const expireInsurance = onSchedule(
+  {
+    schedule: "every day 00:15",
+    timeZone: "Africa/Lagos"
+  },
+  expireInsuranceRecords
 );

@@ -11,9 +11,52 @@ export type UserRole =
   | "auditor"
   | "administrator";
 
+export const USER_ROLES = [
+  "fleetOfficer",
+  "programmingOfficer",
+  "overseer",
+  "management",
+  "auditor",
+  "administrator"
+] as const satisfies readonly UserRole[];
+
+export type AccessView =
+  | "overview"
+  | "my-fleet"
+  | "trucks"
+  | "insurance"
+  | "queue"
+  | "programming"
+  | "orders"
+  | "bypass"
+  | "audit";
+
+const roleViews: Record<UserRole, readonly AccessView[]> = {
+  fleetOfficer: ["my-fleet"],
+  programmingOfficer: ["overview", "queue", "programming", "orders"],
+  overseer: ["overview", "queue", "bypass"],
+  management: ["overview", "queue", "audit"],
+  auditor: ["overview", "queue", "audit"],
+  administrator: ["overview", "queue", "orders", "trucks", "insurance", "audit"]
+};
+
+export function isFleetOnlyRoleSet(roles: readonly UserRole[]): boolean {
+  return roles.length > 0 && roles.every((role) => role === "fleetOfficer");
+}
+
+export function visibleViewsForRoles(roles: readonly UserRole[]): AccessView[] {
+  if (isFleetOnlyRoleSet(roles)) return ["my-fleet"];
+
+  return [...new Set(roles.flatMap((role) => roleViews[role]))]
+    .filter((view) => view !== "my-fleet");
+}
+
 export type TruckStatus =
   | "ON_TRIP"
   | "QUEUED"
+  | "AWAITING_AVAILABILITY"
+  | "READY_FOR_PROGRAMMING"
+  | "AWAITING_REPLACEMENT"
   | "INSURANCE_HOLD"
   | "PROGRAMMED"
   | "INACTIVE";
@@ -27,6 +70,9 @@ export type InsuranceStatus =
 export type QueueCycleStatus =
   | "RETURN_REPORTED"
   | "QUEUED"
+  | "AWAITING_AVAILABILITY"
+  | "READY_FOR_PROGRAMMING"
+  | "AWAITING_REPLACEMENT"
   | "INSURANCE_HOLD"
   | "PROGRAMMED"
   | "DISPATCHED"
@@ -36,6 +82,7 @@ export type ProgrammingType = "FIFO" | "BYPASS";
 
 export type ProgrammingBatchStatus =
   | "PREVIEWED"
+  | "AWAITING_AVAILABILITY"
   | "CONFIRMED"
   | "CANCELLED";
 
@@ -84,6 +131,14 @@ export type AuditEventType =
   | "RETURN_REPORTED"
   | "QUEUE_ENTERED"
   | "QUEUE_REMOVED"
+  | "AVAILABILITY_REQUESTED"
+  | "AVAILABILITY_CONFIRMED"
+  | "AVAILABILITY_EXPIRED"
+  | "QUEUE_REPLACED"
+  | "QUEUE_REENTERED_AFTER_TIMEOUT"
+  | "ORDER_IMPORT_UPLOADED"
+  | "ORDER_IMPORT_PROCESSED"
+  | "ORDER_ATC_ASSIGNED"
   | "PROGRAMMING_BATCH_PREVIEWED"
   | "PROGRAMMING_BATCH_CONFIRMED"
   | "TRUCK_PROGRAMMED"
@@ -354,6 +409,9 @@ export type DailyMetrics = {
 
 export type NotificationType =
   | "RETURN_QUEUED"
+  | "AVAILABILITY_REQUESTED"
+  | "AVAILABILITY_CONFIRMED"
+  | "AVAILABILITY_EXPIRED"
   | "INSURANCE_HOLD"
   | "INSURANCE_RENEWED"
   | "BYPASS_REQUESTED"

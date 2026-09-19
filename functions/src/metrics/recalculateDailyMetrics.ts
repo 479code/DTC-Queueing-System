@@ -136,12 +136,14 @@ export const recalculateDailyMetrics = validatedCall(
   }
 );
 
+export async function refreshAllDailyMetrics(): Promise<void> {
+  const siteSnapshot = await db.collection("sites").get();
+  await Promise.all(siteSnapshot.docs.map((site) =>
+    recalculateSiteDailyMetrics(site.id, undefined, { userId: "system:daily-metrics", roles: [] })
+  ));
+}
+
 export const refreshDailyMetrics = onSchedule(
   { schedule: "every day 23:55", timeZone: "Africa/Lagos" },
-  async () => {
-    const siteSnapshot = await db.collection("sites").get();
-    await Promise.all(siteSnapshot.docs.map((site) =>
-      recalculateSiteDailyMetrics(site.id, undefined, { userId: "system:daily-metrics", roles: [] })
-    ));
-  }
+  refreshAllDailyMetrics
 );

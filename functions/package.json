@@ -12,6 +12,7 @@
     "serve": "corepack pnpm build && firebase emulators:start --only functions,firestore,auth,storage"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.750.0",
     "@refinery/shared": "workspace:*",
     "@refinery/types": "workspace:*",
     "@refinery/validation": "workspace:*",

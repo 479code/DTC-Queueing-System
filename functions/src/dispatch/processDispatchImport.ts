@@ -5,7 +5,7 @@ import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { readSheet } from "read-excel-file/node";
 import { validatedCall } from "../shared/callable.js";
 import { requireAnyRole, requireAuth, requireSameSite } from "../shared/auth.js";
-import { db, storage } from "../shared/firebase.js";
+import { db } from "../shared/firebase.js";
 import {
   auditEventsRef,
   dispatchImportsRef,
@@ -15,6 +15,7 @@ import {
 } from "../shared/paths.js";
 import { writeAuditEvent } from "../shared/audit.js";
 import { failedPrecondition, notFound } from "../shared/errors.js";
+import { downloadDispatchObject } from "./objectStore.js";
 import {
   parseDispatchRows,
   reconcileDispatchRows,
@@ -85,7 +86,7 @@ export const processDispatchImport = validatedCall(
 
     try {
       const storagePath = String(claim.importData.storagePath ?? "");
-      const [buffer] = await storage.bucket().file(storagePath).download();
+      const buffer = await downloadDispatchObject(storagePath);
       const checksum = createHash("sha256").update(buffer).digest("hex");
       if (checksum !== claim.importData.checksum) {
         throw new Error("The spreadsheet checksum changed after upload.");
