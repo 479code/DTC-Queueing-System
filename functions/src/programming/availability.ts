@@ -237,15 +237,21 @@ export const getAvailabilityBatch = validatedCall(getAvailabilityBatchInputSchem
   const batchRef = programmingBatchesRef(data.siteId).doc(data.batchId);
   const [batch, items] = await Promise.all([batchRef.get(), batchRef.collection("items").get()]);
   if (!batch.exists) notFound("The availability batch was not found.");
+  const truckIds = [...new Set(items.docs.map((item) => String(item.data().truckId)))];
+  const truckSnapshots = truckIds.length ? await db.getAll(...truckIds.map((truckId) => trucksRef(data.siteId).doc(truckId))) : [];
+  const trucksById = new Map(truckSnapshots.map((snapshot) => [snapshot.id, snapshot.data() ?? {}]));
   return {
     batchId: data.batchId,
     humanCode: String(batch.data()?.humanCode ?? data.batchId),
     status: String(batch.data()?.status ?? "UNKNOWN"),
     items: items.docs.map((item) => {
       const value = item.data();
+      const truck = trucksById.get(String(value.truckId)) ?? {};
       return {
         queueCycleId: String(value.queueCycleId),
         truckId: String(value.truckId),
+        registrationNumber: String(truck.registrationNumber ?? value.truckId),
+        driverName: String(truck.driverName ?? "Driver not recorded"),
         batchOrder: Number(value.batchOrder),
         availabilityStatus: String(value.availabilityStatus),
         expiresAt: value.availabilityExpiresAt instanceof Timestamp ? value.availabilityExpiresAt.toDate().toISOString() : undefined

@@ -495,8 +495,21 @@ export type AvailabilityBatch = {
   batchId: string;
   humanCode: string;
   status: string;
-  items: Array<{ queueCycleId: string; truckId: string; batchOrder: number; availabilityStatus: string; expiresAt?: string }>;
+  items: Array<{ queueCycleId: string; truckId: string; registrationNumber?: string; driverName?: string; batchOrder: number; availabilityStatus: string; expiresAt?: string }>;
 };
+
+// A batch lives on the server, so a programming officer who reloads or signs in
+// again must be able to pick the open one back up.
+export async function findOpenAvailabilityBatchId(siteId: string): Promise<string | null> {
+  if (!db || !auth?.currentUser) return null;
+  const snapshot = await getDocs(query(
+    collection(db, "sites", siteId, "programmingBatches"),
+    where("status", "==", "AWAITING_AVAILABILITY")
+  ));
+  const open = snapshot.docs
+    .sort((left, right) => timestampMillis(right.data().createdAt) - timestampMillis(left.data().createdAt))[0];
+  return open ? open.id : null;
+}
 
 export async function startAvailability(input: { siteId: string; requestedSize: number; includeBypassAuthorizationIds?: string[] }): Promise<{ batchId: string; humanCode: string; expiresAt: string; requestedSize: number }> {
   if (!functions || !auth?.currentUser) return { batchId: `demo-availability-${Date.now()}`, humanCode: "AV-DEMO", expiresAt: new Date(Date.now() + 3600000).toISOString(), requestedSize: input.requestedSize };

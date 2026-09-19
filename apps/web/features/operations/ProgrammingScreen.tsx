@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, CheckCircle2, Clock3, Eye, Layers3, ListOrdered, LoaderCircle, RefreshCw, Send, ShieldCheck } from "lucide-react";
 import {
-  confirmProgrammingWithOrders, loadAvailabilityBatch, loadAvailableOrders, loadValidatedBypasses,
+  confirmProgrammingWithOrders, findOpenAvailabilityBatchId, loadAvailabilityBatch, loadAvailableOrders, loadValidatedBypasses,
   previewProgramming, startAvailability, type AvailabilityBatch, type ImportedOrderOption,
   type ProgrammingPreview, type QueueEntryView, type ValidatedBypassOption
 } from "./api";
@@ -33,6 +33,32 @@ export function ProgrammingScreen({ siteId, queue }: { siteId: string; queue: Qu
     setSelectedBypassId((current) => options.some((item) => item.authorizationId === current) ? current : options[0]?.authorizationId ?? "");
   };
   useEffect(() => { void refreshBypasses().catch(() => undefined); }, [siteId]);
+
+  useEffect(() => {
+    let active = true;
+    const restore = async () => {
+      const batchId = await findOpenAvailabilityBatchId(siteId);
+      if (!active || !batchId) return;
+      const [batch, availableOrders] = await Promise.all([loadAvailabilityBatch({ siteId, batchId }), loadAvailableOrders(siteId)]);
+      if (!active) return;
+      setActiveBatch(batch);
+      setOrders(availableOrders);
+    };
+    void restore().catch(() => undefined);
+    return () => { active = false; };
+  }, [siteId]);
+
+  // Confirmations happen on another person's device, so poll while a window is open.
+  useEffect(() => {
+    if (!activeBatch) return;
+    const batchId = activeBatch.batchId;
+    const timer = window.setInterval(() => {
+      void loadAvailabilityBatch({ siteId, batchId })
+        .then((batch) => setActiveBatch((current) => current && current.batchId === batchId ? batch : current))
+        .catch(() => undefined);
+    }, 15000);
+    return () => window.clearInterval(timer);
+  }, [activeBatch?.batchId, siteId]);
   const input = { siteId, requestedSize: batchSize, includeBypassAuthorizationIds: includeBypass && selectedBypass ? [selectedBypass.authorizationId] : undefined };
 
   const previewBatch = async () => {
@@ -82,7 +108,7 @@ export function ProgrammingScreen({ siteId, queue }: { siteId: string; queue: Qu
       </section>
       <section className="previewPanel programmingPreviewPanel"><div className="programmingPanelHeading"><div><span>{activeBatch ? "Availability window" : preview ? "FIFO batch preview" : "Next in line"}</span><h2>{activeBatch ? `${confirmed.length} of ${activeBatch.items.length} drivers confirmed` : preview ? `${preview.items.length} FIFO trucks selected` : "The queue is ready when you are"}</h2><p>{activeBatch ? "Confirmed trucks can now receive imported orders and ATCs." : preview ? "Review the suggested order before requesting availability." : "Start with a batch size to see the next eligible trucks."}</p></div>{activeBatch ? <button className="iconButton" disabled={busy !== null} onClick={() => void refreshAvailability()} title="Refresh availability" type="button">{busy === "refresh" ? <LoaderCircle className="spin" size={16} /> : <RefreshCw size={16} />}</button> : <span className="programmingPanelStatus"><span /> Live queue</span>}</div>
         {preview ? <><div className="programmingRoster availabilityRoster"><div aria-hidden="true" className="programmingRosterHeader"><span>Order</span><span>Truck and driver</span><span>Queue</span><span>Selection</span></div>{preview.items.map((item) => { const truck = queueByTruck.get(item.truckId); return <div className="programmingRosterRow" key={item.queueCycleId}><div className="programmingOrder"><span>Batch</span><strong>#{item.batchOrder}</strong></div><div className="programmingTruck"><strong>{truck?.registrationNumber ?? item.truckId}</strong><span>{truck?.driverName ?? "Driver not recorded"}</span></div><div className="programmingQueuePosition"><span>Queue position</span><strong>#{item.originalQueuePosition}</strong></div><div><StatusBadge value={item.selectionType} /></div></div>; })}</div><div className="confirmBar"><p>Availability confirmation will be requested for every truck for one hour.</p><button className="primaryButton commandButton" disabled={busy !== null} onClick={() => void requestAvailability()} type="button">{busy === "request" ? <LoaderCircle className="spin" size={16} /> : <Send size={16} />}Request availability</button></div></> : null}
-        {activeBatch ? <><div className="availabilitySummary"><Clock3 size={18} /><p>{confirmed.length} of {activeBatch.items.length} trucks have confirmed. Expired trucks are replaced by the next eligible FIFO truck, then return to the back of the queue.</p></div><div className="programmingRoster availabilityRoster"><div aria-hidden="true" className="programmingRosterHeader"><span>Order</span><span>Truck</span><span>Availability</span><span>Imported order and ATC</span></div>{activeBatch.items.map((item) => { const truck = queueByTruck.get(item.truckId); const eligible = item.availabilityStatus === "CONFIRMED"; return <div className="programmingRosterRow" key={`${item.queueCycleId}-${item.batchOrder}`}><div className="programmingOrder"><span>Batch</span><strong>#{item.batchOrder}</strong></div><div className="programmingTruck"><strong>{truck?.registrationNumber ?? item.truckId}</strong><span>{truck?.driverName ?? "Driver not recorded"}</span></div><div><StatusBadge value={item.availabilityStatus} /></div><label className="atcField"><span>Order and ATC</span><select disabled={!eligible || busy !== null} onChange={(event) => setOrderByCycle((current) => ({ ...current, [item.queueCycleId]: event.target.value }))} value={orderByCycle[item.queueCycleId] ?? ""}><option value="">Select imported order</option>{orders.map((order) => <option disabled={Object.entries(orderByCycle).some(([cycle, orderId]) => cycle !== item.queueCycleId && orderId === order.orderId)} key={order.orderId} value={order.orderId}>{order.atcNo} · SO {order.salesOrderNo} · {order.dprpCustomerName ?? order.customerName}</option>)}</select></label></div>; })}</div><div className="confirmBar"><p>{allOrdersSelected ? "Ready to program confirmed trucks in FIFO order." : "Choose an imported order and ATC for each confirmed truck."}</p><button className="primaryButton commandButton" disabled={busy !== null || !allOrdersSelected} onClick={() => void programConfirmed()} type="button">{busy === "program" ? <LoaderCircle className="spin" size={16} /> : <CheckCircle2 size={16} />}Confirm programming</button></div></> : null}
+        {activeBatch ? <><div className="availabilitySummary"><Clock3 size={18} /><p>{confirmed.length} of {activeBatch.items.length} trucks have confirmed. Expired trucks are replaced by the next eligible FIFO truck, then return to the back of the queue.</p></div><div className="programmingRoster availabilityRoster"><div aria-hidden="true" className="programmingRosterHeader"><span>Order</span><span>Truck</span><span>Availability</span><span>Imported order and ATC</span></div>{activeBatch.items.map((item) => { const truck = queueByTruck.get(item.truckId); const registration = item.registrationNumber ?? truck?.registrationNumber ?? item.truckId; const driverName = item.driverName ?? truck?.driverName ?? "Driver not recorded"; const eligible = item.availabilityStatus === "CONFIRMED"; return <div className="programmingRosterRow" key={`${item.queueCycleId}-${item.batchOrder}`}><div className="programmingOrder"><span>Batch</span><strong>#{item.batchOrder}</strong></div><div className="programmingTruck"><strong>{registration}</strong><span>{driverName}</span></div><div><StatusBadge value={item.availabilityStatus} /></div><label className="atcField"><span>Order and ATC</span><select disabled={!eligible || busy !== null} onChange={(event) => setOrderByCycle((current) => ({ ...current, [item.queueCycleId]: event.target.value }))} value={orderByCycle[item.queueCycleId] ?? ""}><option value="">Select imported order</option>{orders.map((order) => <option disabled={Object.entries(orderByCycle).some(([cycle, orderId]) => cycle !== item.queueCycleId && orderId === order.orderId)} key={order.orderId} value={order.orderId}>{order.atcNo} · SO {order.salesOrderNo} · {order.dprpCustomerName ?? order.customerName}</option>)}</select></label></div>; })}</div><div className="confirmBar"><p>{allOrdersSelected ? "Ready to program confirmed trucks in FIFO order." : "Choose an imported order and ATC for each confirmed truck."}</p><button className="primaryButton commandButton" disabled={busy !== null || !allOrdersSelected} onClick={() => void programConfirmed()} type="button">{busy === "program" ? <LoaderCircle className="spin" size={16} /> : <CheckCircle2 size={16} />}Confirm programming</button></div></> : null}
         {!preview && !activeBatch ? <div className="emptyPreview programmingEmpty"><span><Layers3 size={23} /></span><h3>No batch selected</h3><p>Choose the number of trucks for the next FIFO run.</p><ArrowRight size={17} /></div> : null}
       </section>
     </div>
