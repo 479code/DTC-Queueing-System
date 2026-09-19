@@ -14,6 +14,7 @@ import {
   previewProgrammingBatch,
   processDispatchImport,
   processOrderImport,
+  provisionUser,
   recalculateDailyMetrics,
   registerDeviceToken,
   rejectBypass,
@@ -39,6 +40,7 @@ type ExecutableOperation = {
 
 const operations: Record<string, ExecutableOperation> = {
   reportTruckReturn,
+  provisionUser,
   saveTruck,
   setUserAccess,
   batchSaveTrucks,

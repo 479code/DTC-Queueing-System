@@ -24,3 +24,4 @@ export { recalculateDailyMetrics, refreshAllDailyMetrics, refreshDailyMetrics } 
 export { auth, db } from "./shared/firebase.js";
 export { putDispatchObject } from "./dispatch/objectStore.js";
 export { setUserAccess } from "./auth/setUserAccess.js";
+export { provisionUser } from "./auth/provisionUser.js";

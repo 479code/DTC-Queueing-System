@@ -152,6 +152,12 @@
 .dataTable td > strong { font-size: 13px; }
 .dataTable td > strong + span,
 .dataTable .dataStatus + span { color: var(--muted); font-size: 10px; margin-top: 4px; }
+.staffActions { display: flex; gap: 4px; justify-content: flex-end; }
+.roleList { display: flex; flex-wrap: wrap; gap: 5px; }
+.roleList span { background: #eef3f5; border: 1px solid #d9e2e7; border-radius: 999px; color: #40515f; font-size: 9px; font-weight: 700; padding: 4px 7px; white-space: nowrap; }
+.roleField { border: 1px solid var(--border); border-radius: 6px; display: grid; gap: 10px; grid-column: 1 / -1; margin: 0; padding: 12px; }
+.roleField legend { color: var(--muted); font-size: 10px; font-weight: 800; padding: 0 5px; text-transform: uppercase; }
+.roleField > div { display: flex; flex-wrap: wrap; gap: 10px 16px; }
 .dataStatus { border-radius: 999px; display: inline-block; font-size: 9px; font-weight: 800; padding: 5px 7px; text-transform: uppercase; white-space: nowrap; }
 .status-valid,
 .status-queued,

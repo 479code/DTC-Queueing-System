@@ -22,6 +22,7 @@ export const USER_ROLES = [
 
 export type AccessView =
   | "overview"
+  | "staff"
   | "my-fleet"
   | "trucks"
   | "insurance"
@@ -37,7 +38,7 @@ const roleViews: Record<UserRole, readonly AccessView[]> = {
   overseer: ["overview", "queue", "bypass"],
   management: ["overview", "queue", "audit"],
   auditor: ["overview", "queue", "audit"],
-  administrator: ["overview", "queue", "orders", "trucks", "insurance", "audit"]
+  administrator: ["overview", "staff", "queue", "orders", "trucks", "insurance", "audit"]
 };
 
 export function isFleetOnlyRoleSet(roles: readonly UserRole[]): boolean {

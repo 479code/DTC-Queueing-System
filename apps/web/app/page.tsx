@@ -10,7 +10,8 @@ import {
   ShieldCheck,
   Truck,
   UserRound,
-  UserRoundCheck
+  UserRoundCheck,
+  UsersRound
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { USER_ROLES, isFleetOnlyRoleSet, visibleViewsForRoles, type AccessView, type UserRole } from "@refinery/types";
@@ -23,6 +24,7 @@ import { OrdersScreen } from "../features/orders/OrdersScreen";
 import { ProductPreview } from "../features/preview/ProductPreview";
 import { FleetWorkspace } from "../features/fleet/FleetWorkspace";
 import { AuditScreen } from "../features/reporting/AuditScreen";
+import { StaffAccessScreen } from "../features/access/StaffAccessScreen";
 import { OverviewScreen } from "../features/reporting/OverviewScreen";
 import {
   demoOfficers,
@@ -55,6 +57,7 @@ type NavigationItem = {
 const navigation: NavigationItem[] = [
   { id: "my-fleet", label: "My Fleet", icon: UserRound },
   { id: "overview", label: "Overview", icon: BarChart3 },
+  { id: "staff", label: "Staff Access", icon: UsersRound },
   { id: "queue", label: "Live Queue", icon: ListOrdered },
   { id: "programming", label: "Programming", icon: ClipboardCheck },
   { id: "orders", label: "Orders & ATCs", icon: FileSearch },
@@ -67,7 +70,7 @@ const navigation: NavigationItem[] = [
 function viewFromHash(): View {
   if (typeof window === "undefined") return "trucks";
   const value = window.location.hash.slice(1);
-  return ["overview", "my-fleet", "trucks", "insurance", "queue", "programming", "orders", "bypass", "audit", "preview"].includes(value)
+  return ["overview", "staff", "my-fleet", "trucks", "insurance", "queue", "programming", "orders", "bypass", "audit", "preview"].includes(value)
     ? (value as View)
     : "trucks";
 }
@@ -110,6 +113,12 @@ export default function Page() {
       unsubscribeQueue = () => undefined;
     };
 
+    const clearLiveCollections = () => {
+      setTrucks([]);
+      setQueue([]);
+      setOfficers([]);
+    };
+
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       resetLiveData();
       setDataMessage("");
@@ -117,6 +126,7 @@ export default function Page() {
         setRoles([]);
         setUserEmail("");
         setDemoMode(false);
+        clearLiveCollections();
         setAuthStatus("signed-out");
         return;
       }
@@ -144,10 +154,12 @@ export default function Page() {
         setRoles(activeRoles);
         setUserId(session.userId);
         setDemoMode(false);
+        clearLiveCollections();
         setAuthStatus("ready");
         const onError = (message: string) => {
-          setDataMessage(message);
-          setDemoMode(true);
+          setDataMessage(`Live data could not be loaded: ${message}`);
+          clearLiveCollections();
+          setDemoMode(false);
         };
         const fleetOnlySession = isFleetOnlyRoleSet(activeRoles);
         if (fleetOnlySession) {
@@ -217,6 +229,7 @@ export default function Page() {
         {dataMessage ? <p className="connectionMessage">Live data unavailable. Showing demonstration data.</p> : null}
         {activeView === "my-fleet" ? <FleetWorkspace demoMode={demoMode} fleetOfficerId={userId} onTrucksChange={setTrucks} queue={queue} siteId={siteId} trucks={trucks} /> : null}
         {activeView === "overview" ? <OverviewScreen canRecalculate={isDemoExperience || roles.some((role) => ["management", "administrator"].includes(role))} demoMode={demoMode} queue={queue} siteId={siteId} trucks={trucks} /> : null}
+        {activeView === "staff" ? <StaffAccessScreen currentUserId={userId} siteId={siteId} /> : null}
         {activeView === "trucks" ? <TrucksScreen demoMode={demoMode} officers={officers} onTrucksChange={setTrucks} siteId={siteId} trucks={trucks} /> : null}
         {activeView === "insurance" ? <InsuranceScreen demoMode={demoMode} onTrucksChange={setTrucks} siteId={siteId} trucks={trucks} /> : null}
         {activeView === "queue" ? <QueueScreen queue={queue} /> : null}

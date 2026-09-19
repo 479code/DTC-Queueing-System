@@ -175,3 +175,18 @@ export const setUserAccessInputSchema = z.object({
   isActive: z.boolean(),
   mfaRequired: z.boolean().default(false)
 });
+
+export const provisionUserInputSchema = z.object({
+  siteId: siteIdSchema,
+  name: z.string().trim().min(2).max(120),
+  email: z.string().trim().email().max(254),
+  roles: z.array(z.enum([
+    "fleetOfficer",
+    "programmingOfficer",
+    "overseer",
+    "management",
+    "auditor",
+    "administrator"
+  ])).min(1).max(6),
+  mfaRequired: z.boolean().default(false)
+});
