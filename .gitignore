@@ -14,3 +14,5 @@ firebase-emulator-data/
 *.local
 *.log
 *.tsbuildinfo
+apps/api/lib/
+apps/worker/lib/

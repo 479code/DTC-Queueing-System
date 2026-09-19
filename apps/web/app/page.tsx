@@ -157,7 +157,8 @@ export default function Page() {
         clearLiveCollections();
         setAuthStatus("ready");
         const onError = (message: string) => {
-          setDataMessage(`Live data could not be loaded: ${message}`);
+          console.error("Live data subscription failed:", message);
+          setDataMessage("Some live data is temporarily unavailable. Figures may be incomplete.");
           clearLiveCollections();
           setDemoMode(false);
         };
@@ -172,8 +173,8 @@ export default function Page() {
         if (fleetOnlySession) return;
         try {
           setOfficers(await loadFleetOfficers(session.siteId));
-        } catch (error) {
-          onError(error instanceof Error ? error.message : "Unable to load fleet officers.");
+        } catch {
+          setOfficers([]);
         }
       }).catch(() => {
         if (!active) return;
