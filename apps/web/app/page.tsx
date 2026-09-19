@@ -226,7 +226,7 @@ export default function Page() {
       </aside>
 
       <section className="content">
-        {dataMessage ? <p className="connectionMessage">Live data unavailable. Showing demonstration data.</p> : null}
+        {dataMessage ? <p className="connectionMessage">{dataMessage}</p> : null}
         {activeView === "my-fleet" ? <FleetWorkspace demoMode={demoMode} fleetOfficerId={userId} onTrucksChange={setTrucks} queue={queue} siteId={siteId} trucks={trucks} /> : null}
         {activeView === "overview" ? <OverviewScreen canRecalculate={isDemoExperience || roles.some((role) => ["management", "administrator"].includes(role))} demoMode={demoMode} queue={queue} siteId={siteId} trucks={trucks} /> : null}
         {activeView === "staff" ? <StaffAccessScreen currentUserId={userId} siteId={siteId} /> : null}
