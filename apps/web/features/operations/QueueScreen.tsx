@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Clock3, Search } from "lucide-react";
+import { Clock3, ListOrdered, Search, ShieldCheck, Truck } from "lucide-react";
 import type { QueueEntryView } from "./api";
 import { StatusBadge } from "./ui";
 
@@ -22,10 +22,11 @@ export function QueueScreen({ queue }: { queue: QueueEntryView[] }) {
 
   return (
     <>
-      <header className="pageHeader"><div><h1>Live Queue</h1><p>Canonical FIFO order. Search never changes programming priority.</p></div><span className="liveIndicator"><span /> Live</span></header>
-      <section className="queueSummary"><div><span>Waiting trucks</span><strong>{queue.length}</strong></div><div><span>Next truck</span><strong>{queue[0]?.registrationNumber ?? "None"}</strong></div><div><span>Longest wait</span><strong>{queue[0] ? waitTime(queue[0].queueEnteredAtMillis, now) : "0m"}</strong></div></section>
-      <section className="dataPanel">
-        <div className="tableToolbar"><label className="searchField"><Search size={16} /><input aria-label="Search queue" onChange={(event) => setQueryText(event.target.value)} placeholder="Find truck, driver, or officer" value={queryText} /></label><span className="orderLock">Ordered by queue-entry time</span></div>
+      <header className="queueCommandHeader"><div><p className="eyebrow">Canonical FIFO queue</p><h1>Live queue</h1><p>Every truck is displayed in its protected queue-entry order. Search helps you find a record without changing programming priority.</p></div><span className="queueLiveIndicator"><i />Live queue</span></header>
+      <section className="queueStatusStrip" aria-label="Queue status"><div><ListOrdered size={18} /><span>Waiting trucks</span><strong>{queue.length}</strong></div><i /><div><Truck size={18} /><span>Next truck</span><strong>{queue[0]?.registrationNumber ?? "None"}</strong><small>{queue[0]?.driverName ?? "No driver waiting"}</small></div><i /><div><Clock3 size={18} /><span>Longest wait</span><strong>{queue[0] ? waitTime(queue[0].queueEnteredAtMillis, now) : "0m"}</strong></div><i /><div><ShieldCheck size={18} /><span>Queue order</span><strong>Protected</strong></div></section>
+      <section className="dataPanel queueRegisterPanel">
+        <div className="queueRegisterHeading"><div><span>Current positions</span><h2>Every truck waiting to be programmed</h2><p>The first truck is highlighted. All remaining positions remain in strict FIFO order.</p></div><span><i />Updates live</span></div>
+        <div className="tableToolbar queueToolbar"><label className="searchField"><Search size={16} /><input aria-label="Search queue" onChange={(event) => setQueryText(event.target.value)} placeholder="Find truck, driver, or officer" value={queryText} /></label><span className="orderLock"><ShieldCheck size={14} />Ordered by queue-entry time</span></div>
         <div className="tableScroll"><table className="dataTable queueTable">
           <thead><tr><th>Position</th><th>Truck</th><th>Driver</th><th>Fleet officer</th><th>Queue entry</th><th>Waiting</th><th>Insurance</th></tr></thead>
           <tbody>{filtered.map((entry) => <tr className={entry.position === 1 ? "nextRow" : undefined} key={entry.id}>

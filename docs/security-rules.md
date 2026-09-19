@@ -1,6 +1,6 @@
 # Security Rules
 
-Firestore and Storage rules are guardrails. Cloud Functions enforce business rules.
+Firestore rules are guardrails. The Railway API enforces business rules.
 
 Baseline principles:
 
@@ -8,7 +8,7 @@ Baseline principles:
 - Site access is mandatory.
 - Role checks apply to every read.
 - Direct client writes to operational state are denied.
-- Clients cannot set `queueEnteredAt`, `programmedAt`, dispatch confirmation, bypass authorization, or audit events.
+- Clients cannot set `queueEnteredAt`, availability expiry or replacement state, `programmedAt`, imported-order assignment, bypass authorization, or audit events.
 - OTP hashes are never exposed to normal client reads.
 
 Use the emulator test suite before production deployment.

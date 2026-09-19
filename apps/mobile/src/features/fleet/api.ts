@@ -1,15 +1,17 @@
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
-import { httpsCallable } from "firebase/functions";
 import { auth, db, functions } from "../../firebase/client";
+import { callOperationalApi } from "../../firebase/operations";
 import { getSession } from "../bypass/api";
 
 export type MobileTruck = {
   id: string;
   registrationNumber: string;
   driverName: string;
-  currentStatus: "ON_TRIP" | "QUEUED" | "PROGRAMMED" | "INSURANCE_HOLD" | "INACTIVE";
+  currentStatus: "ON_TRIP" | "QUEUED" | "AWAITING_AVAILABILITY" | "READY_FOR_PROGRAMMING" | "AWAITING_REPLACEMENT" | "PROGRAMMED" | "INSURANCE_HOLD" | "INACTIVE";
   insuranceStatus: "VALID" | "EXPIRING_SOON" | "EXPIRED" | "UNKNOWN";
   insuranceExpiry: string;
+  availabilityBatchId?: string;
+  availabilityQueueCycleId?: string;
 };
 
 export type MobileQueueEntry = {
@@ -52,8 +54,7 @@ function formatTimestamp(value: unknown): string {
 
 async function getQueuePosition(siteId: string, queueCycleId: string): Promise<number> {
   if (!functions || !auth?.currentUser) return demoFleetHome.queue.find((entry) => entry.id === queueCycleId)?.position ?? 0;
-  const callable = httpsCallable<{ siteId: string; queueCycleId: string }, { position: number }>(functions, "getQueuePosition");
-  return (await callable({ siteId, queueCycleId })).data.position;
+  return (await callOperationalApi<{ siteId: string; queueCycleId: string }, { position: number }>("getQueuePosition", { siteId, queueCycleId })).position;
 }
 
 export async function loadFleetHome(): Promise<FleetHome> {
@@ -73,7 +74,9 @@ export async function loadFleetHome(): Promise<FleetHome> {
       driverName: String(data.driverName ?? "Driver not recorded"),
       currentStatus: String(data.currentStatus ?? "INACTIVE") as MobileTruck["currentStatus"],
       insuranceStatus: String(data.latestInsuranceStatus ?? "UNKNOWN") as MobileTruck["insuranceStatus"],
-      insuranceExpiry: formatTimestamp(data.latestInsuranceExpiry)
+      insuranceExpiry: formatTimestamp(data.latestInsuranceExpiry),
+      availabilityBatchId: typeof data.availabilityBatchId === "string" ? data.availabilityBatchId : undefined,
+      availabilityQueueCycleId: typeof data.availabilityQueueCycleId === "string" ? data.availabilityQueueCycleId : undefined
     };
   });
   const queue = await Promise.all(cycleSnapshot.docs.filter((cycle) => cycle.data().status === "QUEUED").map(async (cycle) => {
@@ -95,6 +98,15 @@ export async function loadFleetHome(): Promise<FleetHome> {
 
 export async function reportMobileReturn(siteId: string, truck: MobileTruck): Promise<"QUEUED" | "INSURANCE_HOLD"> {
   if (!functions || !auth?.currentUser) return truck.insuranceStatus === "VALID" || truck.insuranceStatus === "EXPIRING_SOON" ? "QUEUED" : "INSURANCE_HOLD";
-  const callable = httpsCallable<{ siteId: string; truckId: string }, { status: "QUEUED" | "INSURANCE_HOLD" }>(functions, "reportTruckReturn");
-  return (await callable({ siteId, truckId: truck.id })).data.status;
+  return (await callOperationalApi<{ siteId: string; truckId: string }, { status: "QUEUED" | "INSURANCE_HOLD" }>("reportTruckReturn", { siteId, truckId: truck.id })).status;
+}
+
+export async function confirmMobileAvailability(siteId: string, truck: MobileTruck): Promise<void> {
+  if (!truck.availabilityBatchId || !truck.availabilityQueueCycleId) throw new Error("This truck has no open availability request.");
+  if (!functions || !auth?.currentUser) return;
+  await callOperationalApi<{ siteId: string; batchId: string; queueCycleId: string }, { status: string }>("confirmTruckAvailability", {
+    siteId,
+    batchId: truck.availabilityBatchId,
+    queueCycleId: truck.availabilityQueueCycleId
+  });
 }

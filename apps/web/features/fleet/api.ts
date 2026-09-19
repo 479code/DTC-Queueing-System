@@ -1,5 +1,5 @@
-import { httpsCallable } from "firebase/functions";
 import { auth, functions } from "../../firebase/client";
+import { callOperationalApi } from "../../firebase/operations";
 import type { InsuranceStatus, TruckStatus } from "../operations/api";
 
 export async function reportFleetReturn(input: { siteId: string; truckId: string; insuranceStatus: InsuranceStatus }): Promise<{
@@ -13,8 +13,7 @@ export async function reportFleetReturn(input: { siteId: string; truckId: string
     };
   }
 
-  const callable = httpsCallable<{ siteId: string; truckId: string }, { cycleId: string; status: Extract<TruckStatus, "QUEUED" | "INSURANCE_HOLD"> }>(functions, "reportTruckReturn");
-  return (await callable({ siteId: input.siteId, truckId: input.truckId })).data;
+  return callOperationalApi<{ siteId: string; truckId: string }, { cycleId: string; status: Extract<TruckStatus, "QUEUED" | "INSURANCE_HOLD"> }>("reportTruckReturn", { siteId: input.siteId, truckId: input.truckId });
 }
 
 export async function requestFleetBypass(input: {
@@ -28,8 +27,7 @@ export async function requestFleetBypass(input: {
     return { bypassRequestId: "BR-DEMO-NEW", queuePositionAtRequest: 7, numberOfTrucksBypassed: 6 };
   }
 
-  const callable = httpsCallable<typeof input, { bypassRequestId: string; queuePositionAtRequest: number; numberOfTrucksBypassed: number }>(functions, "requestBypass");
-  return (await callable(input)).data;
+  return callOperationalApi<typeof input, { bypassRequestId: string; queuePositionAtRequest: number; numberOfTrucksBypassed: number }>("requestBypass", input);
 }
 
 export async function validateFleetBypassOtp(input: {
@@ -42,6 +40,5 @@ export async function validateFleetBypassOtp(input: {
     return { authorizationId: "AUTH-DEMO-919", status: "VALIDATED", expiresAt: new Date(Date.now() + 600000).toISOString() };
   }
 
-  const callable = httpsCallable<typeof input, { authorizationId: string; status: "VALIDATED"; expiresAt: string }>(functions, "validateBypassOtp");
-  return (await callable(input)).data;
+  return callOperationalApi<typeof input, { authorizationId: string; status: "VALIDATED"; expiresAt: string }>("validateBypassOtp", input);
 }

@@ -10,8 +10,8 @@ import {
   type QueryDocumentSnapshot,
   type Unsubscribe
 } from "firebase/firestore";
-import { httpsCallable } from "firebase/functions";
 import { auth, db, functions } from "../../firebase/client";
+import { callOperationalApi } from "../../firebase/operations";
 
 export type BypassRequestSummary = {
   id: string;
@@ -125,7 +125,7 @@ export async function getSession(): Promise<{
     return null;
   }
 
-  const token = await user.getIdTokenResult();
+  const token = await user.getIdTokenResult(true);
   const siteId = token.claims.siteId;
   const roles = token.claims.roles;
 
@@ -192,15 +192,12 @@ export async function requestBypass(input: {
     };
   }
 
-  const callable = httpsCallable<typeof input, {
+  return callOperationalApi<typeof input, {
     bypassRequestId: string;
     queuePositionAtRequest: number;
     numberOfTrucksBypassed: number;
     status: "PENDING";
-  }>(functions, "requestBypass");
-  const response = await callable(input);
-
-  return response.data;
+  }>("requestBypass", input);
 }
 
 export async function approveBypass(
@@ -216,16 +213,10 @@ export async function approveBypass(
     };
   }
 
-  const callable = httpsCallable<
-    { siteId: string; bypassRequestId: string },
-    ApprovedBypass
-  >(functions, "approveBypass");
-  const response = await callable({
+  return callOperationalApi<{ siteId: string; bypassRequestId: string }, ApprovedBypass>("approveBypass", {
     siteId: request.siteId,
     bypassRequestId: request.id
   });
-
-  return response.data;
 }
 
 export async function rejectBypass(
@@ -236,8 +227,7 @@ export async function rejectBypass(
     return;
   }
 
-  const callable = httpsCallable(functions, "rejectBypass");
-  await callable({
+  await callOperationalApi("rejectBypass", {
     siteId: request.siteId,
     bypassRequestId: request.id,
     rejectionReason
@@ -265,12 +255,9 @@ export async function validateBypassOtp(input: {
     };
   }
 
-  const callable = httpsCallable<typeof input, {
+  return callOperationalApi<typeof input, {
     authorizationId: string;
     status: "VALIDATED";
     expiresAt: string;
-  }>(functions, "validateBypassOtp");
-  const response = await callable(input);
-
-  return response.data;
+  }>("validateBypassOtp", input);
 }

@@ -1,17 +1,18 @@
 # Refinery Truck FIFO Queue & Programming System
 
-Firebase-native monorepo for the refinery truck FIFO queue, batch programming, bypass/OTP, insurance, dispatch reconciliation, and audit system.
+Hybrid Railway and Firebase monorepo for the refinery truck FIFO queue, availability-controlled batch programming, imported orders/ATCs, bypass/OTP, insurance, and audit system.
 
 Start with [docs/CODEX_HANDOFF.md](docs/CODEX_HANDOFF.md). It is the implementation source of truth.
 
 ## Stack
 
-- Next.js web app on Firebase App Hosting
+- Next.js web app on Railway
 - React Native / Expo mobile app
 - Firebase Auth
 - Firestore
-- Cloud Functions for Firebase
-- Cloud Storage
+- Railway API for consequential operations
+- Railway Bucket for incoming order and ATC spreadsheets and supporting documents
+- Railway worker for FCM delivery and scheduled insurance/metrics tasks
 - Firebase Cloud Messaging
 
 ## First Build Target
@@ -25,6 +26,8 @@ Auth
   -> server-timestamped queue entry
   -> live FIFO queue
   -> preview next N trucks
+  -> request one-hour truck availability
+  -> link imported order/ATC to confirmed trucks
   -> confirm programming batch
   -> audit events
 ```
@@ -69,6 +72,14 @@ firebase functions:secrets:set BYPASS_OTP_PEPPER
 
 For local emulator work, provide the same secret through the Firebase Functions
 secret override mechanism. Never commit its value.
+
+## Railway deployment
+
+The production application uses Railway for the web app, authenticated API, and
+private dispatch-file storage. Firebase remains the source of truth for identity,
+Firestore data, and mobile notifications. See
+[docs/RAILWAY_DEPLOYMENT.md](docs/RAILWAY_DEPLOYMENT.md) for the required
+services, environment variables, and cutover order.
 
 ## Mobile Push Setup
 

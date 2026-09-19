@@ -10,8 +10,8 @@ import {
   type QueryDocumentSnapshot,
   type Unsubscribe
 } from "firebase/firestore";
-import { httpsCallable } from "firebase/functions";
 import { auth, db, functions } from "../../firebase/client";
+import { callOperationalApi } from "../../firebase/operations";
 
 export type BypassRequestView = {
   id: string;
@@ -160,7 +160,7 @@ export async function getFirebaseSession(): Promise<{
     return null;
   }
 
-  const token = await user.getIdTokenResult();
+  const token = await user.getIdTokenResult(true);
   const siteId = token.claims.siteId;
   const roles = token.claims.roles;
 
@@ -219,16 +219,10 @@ export async function approveBypassRequest(
     };
   }
 
-  const callable = httpsCallable<
-    { siteId: string; bypassRequestId: string },
-    ApprovedBypass
-  >(functions, "approveBypass");
-  const response = await callable({
+  return callOperationalApi<{ siteId: string; bypassRequestId: string }, ApprovedBypass>("approveBypass", {
     siteId: request.siteId,
     bypassRequestId: request.id
   });
-
-  return response.data;
 }
 
 export async function rejectBypassRequest(
@@ -239,8 +233,7 @@ export async function rejectBypassRequest(
     return;
   }
 
-  const callable = httpsCallable(functions, "rejectBypass");
-  await callable({
+  await callOperationalApi("rejectBypass", {
     siteId: request.siteId,
     bypassRequestId: request.id,
     rejectionReason

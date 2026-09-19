@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
-import { AlertTriangle, CalendarClock, ShieldCheck } from "lucide-react";
+import { AlertTriangle, CalendarClock, ListOrdered, ShieldCheck, Truck } from "lucide-react";
 import { updateInsurance, type TruckView } from "./api";
 import { Dialog, StatusBadge } from "./ui";
 
@@ -54,15 +54,16 @@ export function InsuranceScreen({ siteId, trucks, demoMode, onTrucksChange }: Pr
 
   return (
     <>
-      <header className="pageHeader"><div><h1>Insurance</h1><p>Eligibility controls for every truck entering or remaining in the queue.</p></div></header>
+      <header className="insuranceCommandHeader"><div><p className="eyebrow">Fleet eligibility</p><h1>Insurance control</h1><p>Keep insurance records current so only eligible trucks can enter or remain in the FIFO queue.</p></div><div className="insuranceHeaderCount"><ShieldCheck size={18} /><div><span>Requires attention</span><strong>{attention.length} trucks</strong></div></div></header>
       {message ? <p className="successMessage" role="status">{message}</p> : null}
-      <div className="metricStrip">
+      <div className="metricStrip insuranceStatusStrip">
         <div><ShieldCheck size={18} /><span>Valid</span><strong>{trucks.filter((truck) => truck.insuranceStatus === "VALID").length}</strong></div>
         <div><CalendarClock size={18} /><span>Expiring soon</span><strong>{expiring}</strong></div>
         <div className="criticalMetric"><AlertTriangle size={18} /><span>Expired</span><strong>{expired}</strong></div>
+        <div><ListOrdered size={18} /><span>On insurance hold</span><strong>{trucks.filter((truck) => truck.currentStatus === "INSURANCE_HOLD").length}</strong></div>
       </div>
-      <section className="dataPanel">
-        <div className="panelTitle"><div><h2>Insurance attention</h2><p>Renewals create a new historical record; previous policies remain unchanged.</p></div><span className="recordCount">{attention.length} require attention</span></div>
+      <section className="dataPanel insuranceRegisterPanel">
+        <div className="insuranceRegisterHeading"><div><span>Policy register</span><h2>Insurance eligibility by truck</h2><p>Renewals create a new historical record; previous policies remain unchanged.</p></div><span>{attention.length} require attention</span></div>
         <div className="tableScroll">
           <table className="dataTable">
             <thead><tr><th>Truck</th><th>Driver</th><th>Fleet officer</th><th>Expiry</th><th>Insurance</th><th>Queue state</th><th><span className="visuallyHidden">Action</span></th></tr></thead>

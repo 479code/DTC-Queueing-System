@@ -2,11 +2,31 @@
 
 # Refinery Truck FIFO Queue & Programming System
 
+> **Current controlling change (16 September 2026):** This section supersedes every earlier reference in this document to dispatch reporting, post-programming reconciliation, manually typed/batch-pasted ATCs, or a permanently held unavailable truck. The system does not create ATC numbers and does not reconcile dispatch reports. It imports the received order workbook, which already contains orders and ATC numbers, then links one imported order/ATC pair to each confirmed FIFO truck during programming.
+
+## Availability-Controlled Order Programming
+
+1. A programming officer previews the next eligible FIFO batch, with an approved bypass only where the existing OTP rule permits it.
+2. Starting the batch sends an availability request for every selected truck. Each request has a server-controlled one-hour window.
+3. The assigned fleet officer confirms the truck and its assigned driver are available. No standing user permission allows a person to substitute a driver or choose a replacement truck.
+4. A truck that does not confirm in time opens its slot. The system offers that slot to the next eligible FIFO truck and begins its own one-hour window.
+5. When that replacement truck confirms, the expired truck automatically returns to the back of the FIFO list with a new server queue-entry time. It cannot reclaim its former position. The same rule repeats safely for any further expiry.
+6. The programming officer can only program trucks with confirmed availability. For each, they select one available imported order and its supplied ATC number. The ATC cannot be typed or generated in this system.
+7. The system records the truck, driver, availability events, imported order, ATC number, sales order number, batch, actors, timestamps, bypass evidence where applicable, and audit events.
+
+### Incoming Workbook Contract
+
+The supplied workbook `DD SUS OIL 16.09.26.xlsx` is the reference shape. It includes `ATC NO` and `SALES ORDER NO`, plus customer, station, contact, licence, volume, and expected delivery details. Only `ATC NO` and `SALES ORDER NO` are required for import. Preserve supplied ATCs as text, including leading zeroes such as `0472438`. Reject blank or duplicate ATCs and duplicate previously imported ATCs. Truck registration is not an input requirement for this workbook.
+
+### Current Collections and State
+
+Use `orderImports/{importId}` for workbook metadata and checksum, and `orders/{orderId}` for individual imported records. Orders move from `AVAILABLE` to `PROGRAMMED` only in the same transaction that programs their linked truck. Queue cycles may temporarily be `AWAITING_AVAILABILITY`, `READY_FOR_PROGRAMMING`, or `AWAITING_REPLACEMENT`; only backend code may set these states, expire a timer, nominate the next FIFO truck, or move an expired truck to the rear.
+
 ## Implementation Handoff for Codex
 
 This document is the implementation-ready handoff for building the Refinery Truck FIFO Queue & Programming System.
 
-The business logic in this document is settled. Do not redesign the allocation model, bypass workflow, or operating rules. Implement the agreed rules as specified. Where implementation details are missing, choose the simplest secure Firebase-native approach, document the decision, and keep the product behavior consistent with this handoff.
+The business logic in this document is settled. Do not redesign the allocation model, bypass workflow, or operating rules. Implement the agreed rules as specified. Where implementation details are missing, choose the simplest secure hybrid Railway/Firebase approach, document the decision, and keep the product behavior consistent with this handoff.
 
 Figma reference:
 
@@ -50,7 +70,7 @@ The product must stay neutral in branding. Do not invent company names or public
 - Audit log.
 - Basic management reporting.
 - FCM push notifications and in-app notifications.
-- Firestore security rules and Cloud Function enforced business rules.
+- Firestore security rules and Railway API enforced business rules.
 
 ### Explicitly Out of Scope for MVP
 
@@ -73,23 +93,31 @@ Earlier discussion explored fairness scores, rotation rounds, and observation-on
 
 ## 3. Final Architecture Decision
 
-The final agreed architecture is Firebase-native.
+The final agreed architecture is a Railway/Firebase hybrid. This preserves
+Firebase for identity and real-time operational data while Railway hosts the
+application layer and private file storage.
 
 Use:
 
 - `Next.js` for the web dashboard.
-- `Firebase App Hosting` for the Next.js web app.
+- `Railway` for the Next.js web app.
 - `React Native / Expo` for mobile.
 - `Firebase Authentication` for user identity.
 - `Firestore` as the operational database.
-- `Cloud Functions for Firebase` for all consequential business logic.
-- `Cloud Storage for Firebase` for uploaded dispatch spreadsheets and supporting documents.
+- `Railway API` for all consequential business logic.
+- `Railway Bucket` for uploaded dispatch spreadsheets and supporting documents.
 - `Firebase Cloud Messaging` for push notifications.
-- Firebase and Google Cloud logging, monitoring, backups, and budget alerts.
+- Railway and Firebase monitoring, backups, and budget alerts.
 
-Do not implement the prior NestJS/PostgreSQL/REST design. This handoff supersedes that direction.
+Do not implement the prior NestJS/PostgreSQL/REST design or a PostgreSQL
+migration. Firestore remains the single source of truth.
 
-The clients may read safe operational views from Firestore, subject to security rules. Clients must not directly write consequential state transitions. All important writes go through Cloud Functions.
+The clients may read safe operational views from Firestore, subject to security rules. Clients must not directly write consequential state transitions. All important writes go through the Railway API.
+
+The Railway API verifies Firebase ID tokens, derives the caller's `siteId` and
+roles from Firebase custom claims, enforces the same rules for web and mobile,
+and writes to Firestore with server credentials. Firestore Security Rules deny
+client writes to consequential state; Railway is the only production writer.
 
 Consequential operations include:
 
@@ -314,6 +342,26 @@ Can:
 - perform controlled corrections.
 
 Every administrator correction must create an audit event.
+
+### Web Navigation by Role
+
+In a live session, hide screens that do not belong to the signed-in user's role.
+Do not rely on hidden navigation for security; Firestore rules and the Railway API
+remain the enforcement layer.
+
+| Role | Visible web navigation |
+| --- | --- |
+| Fleet officer only | My Fleet |
+| Programming officer | Overview, Live Queue, Programming, Dispatch |
+| Overseer | Overview, Live Queue, Bypass Requests |
+| Management | Overview, Live Queue, Audit Log |
+| Auditor | Overview, Live Queue, Audit Log |
+| Administrator | Overview, Live Queue, Trucks, Insurance, Audit Log |
+
+For a multi-role user, show the union of their permitted screens. A fleet
+officer with no operational role is the only user whose web experience is
+restricted to My Fleet. Direct hash routes to an unavailable screen must fall
+back to the first permitted screen.
 
 ## 8. Firestore Data Model
 
@@ -1186,7 +1234,7 @@ Output:
 
 ### uploadDispatchReport
 
-The authorized client uploads the workbook directly to Cloud Storage, including the SHA-256 checksum as custom metadata, and then calls this function to register the immutable import.
+The authorized client uploads the workbook through the Railway API to the private Railway Bucket. The API calculates and persists the SHA-256 checksum before registering the immutable import.
 
 Input:
 
@@ -1313,7 +1361,7 @@ Rules:
 
 ## 11. Firestore Security Rules Requirements
 
-Security rules are a guardrail. Cloud Functions are the authority for business logic.
+Security rules are a guardrail. The Railway API is the authority for business logic.
 
 Rules must enforce:
 
@@ -1335,7 +1383,7 @@ Rules must enforce:
 Recommended pattern:
 
 - Clients create no direct operational or device-token writes.
-- Cloud Functions use Admin SDK and bypass rules after checking authorization.
+- Railway uses the Firebase Admin SDK and bypasses rules only after checking Firebase token claims and authorization.
 - Firestore rules allow role-appropriate reads and deny consequential client writes.
 
 Minimum examples to enforce:
@@ -1380,7 +1428,7 @@ dispatchImports / dispatchRecords:
 
 ## 12. Storage Rules Requirements
 
-Use Cloud Storage paths like:
+Use private Railway Bucket object keys like:
 
 ```text
 sites/{siteId}/dispatch/{yyyy}/{mm}/{importId}/{originalFileName}
@@ -2023,7 +2071,7 @@ Production must have:
 
 - billing enabled with budget alerts;
 - Firestore backup/PITR strategy where available;
-- Cloud Storage retention policy for dispatch source files;
+- Railway Bucket retention policy for dispatch source files;
 - Cloud Function error logging;
 - alerting for failed dispatch import;
 - alerting for repeated function errors;

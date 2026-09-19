@@ -11,6 +11,7 @@ import {
 import { httpsCallable } from "firebase/functions";
 import { ref, uploadBytes } from "firebase/storage";
 import { auth, db, functions, storage } from "../../firebase/client";
+import { uploadDispatchWorkbook, usesRailwayOperations } from "../../firebase/operations";
 
 export type DispatchMatchStatus =
   | "MATCHED"
@@ -201,6 +202,10 @@ export async function uploadAndReconcileDispatch(
   const contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
   const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
   const checksum = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+
+  if (usesRailwayOperations()) {
+    return uploadDispatchWorkbook<DispatchSummary>({ siteId, importId, file, checksum });
+  }
 
   await uploadBytes(ref(storage, storagePath), file, {
     contentType,

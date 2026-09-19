@@ -1,20 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import {
   BarChart3,
   ClipboardCheck,
   FileSearch,
   ListOrdered,
+  LogOut,
   ShieldCheck,
   Truck,
   UserRound,
   UserRoundCheck
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { USER_ROLES, isFleetOnlyRoleSet, visibleViewsForRoles, type AccessView, type UserRole } from "@refinery/types";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { AccessPendingScreen, SignInScreen } from "../features/auth/AccessGate";
 import { BypassScreen } from "../features/bypass/BypassScreen";
 import { getFirebaseSession } from "../features/bypass/api";
-import { DispatchScreen } from "../features/dispatch/DispatchScreen";
+import { auth, isFirebaseConfigured } from "../firebase/client";
+import { OrdersScreen } from "../features/orders/OrdersScreen";
+import { ProductPreview } from "../features/preview/ProductPreview";
 import { FleetWorkspace } from "../features/fleet/FleetWorkspace";
 import { AuditScreen } from "../features/reporting/AuditScreen";
 import { OverviewScreen } from "../features/reporting/OverviewScreen";
@@ -37,32 +43,31 @@ import { QueueScreen } from "../features/operations/QueueScreen";
 import { TrucksScreen } from "../features/operations/TrucksScreen";
 import "./page.css";
 
-type View = "overview" | "my-fleet" | "trucks" | "insurance" | "queue" | "programming" | "dispatch" | "bypass" | "audit";
+type View = AccessView | "preview";
+type AuthStatus = "demo" | "loading" | "signed-out" | "pending-access" | "ready";
 
 type NavigationItem = {
-  id: string;
+  id: AccessView;
   label: string;
   icon: LucideIcon;
-  phase?: string;
-  enabled: boolean;
 };
 
 const navigation: NavigationItem[] = [
-  { id: "my-fleet", label: "My Fleet", icon: UserRound, enabled: true },
-  { id: "overview", label: "Overview", icon: BarChart3, enabled: true },
-  { id: "queue", label: "Live Queue", icon: ListOrdered, enabled: true },
-  { id: "programming", label: "Programming", icon: ClipboardCheck, enabled: true },
-  { id: "dispatch", label: "Dispatch", icon: FileSearch, enabled: true },
-  { id: "trucks", label: "Trucks", icon: Truck, enabled: true },
-  { id: "insurance", label: "Insurance", icon: ShieldCheck, enabled: true },
-  { id: "bypass", label: "Bypass Requests", icon: UserRoundCheck, enabled: true },
-  { id: "audit", label: "Audit Log", icon: FileSearch, enabled: true }
+  { id: "my-fleet", label: "My Fleet", icon: UserRound },
+  { id: "overview", label: "Overview", icon: BarChart3 },
+  { id: "queue", label: "Live Queue", icon: ListOrdered },
+  { id: "programming", label: "Programming", icon: ClipboardCheck },
+  { id: "orders", label: "Orders & ATCs", icon: FileSearch },
+  { id: "trucks", label: "Trucks", icon: Truck },
+  { id: "insurance", label: "Insurance", icon: ShieldCheck },
+  { id: "bypass", label: "Bypass Requests", icon: UserRoundCheck },
+  { id: "audit", label: "Audit Log", icon: FileSearch }
 ];
 
 function viewFromHash(): View {
   if (typeof window === "undefined") return "trucks";
   const value = window.location.hash.slice(1);
-  return ["overview", "my-fleet", "trucks", "insurance", "queue", "programming", "dispatch", "bypass", "audit"].includes(value)
+  return ["overview", "my-fleet", "trucks", "insurance", "queue", "programming", "orders", "bypass", "audit", "preview"].includes(value)
     ? (value as View)
     : "trucks";
 }
@@ -73,12 +78,14 @@ export default function Page() {
   const [trucks, setTrucks] = useState<TruckView[]>(demoTrucks);
   const [queue, setQueue] = useState<QueueEntryView[]>(demoQueue);
   const [officers, setOfficers] = useState<FleetOfficerOption[]>(demoOfficers);
-  const [demoMode, setDemoMode] = useState(true);
-  const [roles, setRoles] = useState<string[]>([]);
+  const [demoMode, setDemoMode] = useState(!isFirebaseConfigured);
+  const [roles, setRoles] = useState<UserRole[]>([]);
   const [userId, setUserId] = useState("officer-a");
+  const [userEmail, setUserEmail] = useState("");
+  const [authStatus, setAuthStatus] = useState<AuthStatus>(isFirebaseConfigured ? "loading" : "demo");
   const [dataMessage, setDataMessage] = useState("");
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const updateView = () => setView(viewFromHash());
     updateView();
     window.addEventListener("hashchange", updateView);
@@ -90,80 +97,131 @@ export default function Page() {
     let unsubscribeTrucks: () => void = () => undefined;
     let unsubscribeQueue: () => void = () => undefined;
 
-    void getFirebaseSession().then(async (session) => {
-      if (!active || !session) return;
-      setSiteId(session.siteId);
-      setRoles(session.roles);
-      setUserId(session.userId);
-      setDemoMode(false);
-      const onError = (message: string) => {
-        setDataMessage(message);
-        setDemoMode(true);
-      };
-      const fleetOnlySession = session.roles.includes("fleetOfficer") && !session.roles.some((role) => ["programmingOfficer", "overseer", "management", "auditor", "administrator"].includes(role));
-      if (fleetOnlySession) {
-        unsubscribeTrucks = subscribeToAssignedTrucks(session.siteId, session.userId, setTrucks, onError);
-        unsubscribeQueue = subscribeToAssignedQueue(session.siteId, session.userId, setQueue, onError);
-      } else {
-        unsubscribeTrucks = subscribeToTrucks(session.siteId, setTrucks, onError);
-        unsubscribeQueue = subscribeToQueue(session.siteId, setQueue, onError);
+    if (!isFirebaseConfigured || !auth) {
+      setDemoMode(true);
+      setAuthStatus("demo");
+      return () => undefined;
+    }
+
+    const resetLiveData = () => {
+      unsubscribeTrucks();
+      unsubscribeQueue();
+      unsubscribeTrucks = () => undefined;
+      unsubscribeQueue = () => undefined;
+    };
+
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      resetLiveData();
+      setDataMessage("");
+      if (!user) {
+        setRoles([]);
+        setUserEmail("");
+        setDemoMode(false);
+        setAuthStatus("signed-out");
+        return;
       }
-      if (fleetOnlySession) return;
-      try {
-        setOfficers(await loadFleetOfficers(session.siteId));
-      } catch (error) {
-        onError(error instanceof Error ? error.message : "Unable to load fleet officers.");
-      }
+
+      setUserEmail(user.email ?? "");
+      setAuthStatus("loading");
+      void getFirebaseSession().then(async (session) => {
+        if (!active) return;
+        if (!session) {
+          setRoles([]);
+          setDemoMode(false);
+          setAuthStatus("pending-access");
+          return;
+        }
+
+        const activeRoles = session.roles.filter((role): role is UserRole => USER_ROLES.includes(role as UserRole));
+        if (activeRoles.length === 0) {
+          setRoles([]);
+          setDemoMode(false);
+          setAuthStatus("pending-access");
+          return;
+        }
+
+        setSiteId(session.siteId);
+        setRoles(activeRoles);
+        setUserId(session.userId);
+        setDemoMode(false);
+        setAuthStatus("ready");
+        const onError = (message: string) => {
+          setDataMessage(message);
+          setDemoMode(true);
+        };
+        const fleetOnlySession = isFleetOnlyRoleSet(activeRoles);
+        if (fleetOnlySession) {
+          unsubscribeTrucks = subscribeToAssignedTrucks(session.siteId, session.userId, setTrucks, onError);
+          unsubscribeQueue = subscribeToAssignedQueue(session.siteId, session.userId, setQueue, onError);
+        } else {
+          unsubscribeTrucks = subscribeToTrucks(session.siteId, setTrucks, onError);
+          unsubscribeQueue = subscribeToQueue(session.siteId, setQueue, onError);
+        }
+        if (fleetOnlySession) return;
+        try {
+          setOfficers(await loadFleetOfficers(session.siteId));
+        } catch (error) {
+          onError(error instanceof Error ? error.message : "Unable to load fleet officers.");
+        }
+      }).catch(() => {
+        if (!active) return;
+        setDemoMode(false);
+        setAuthStatus("pending-access");
+      });
     });
 
     return () => {
       active = false;
-      unsubscribeTrucks();
-      unsubscribeQueue();
+      unsubscribeAuth();
+      resetLiveData();
     };
   }, []);
 
-  const fleetOnly = !demoMode && roles.includes("fleetOfficer") && !roles.some((role) => ["programmingOfficer", "overseer", "management", "auditor", "administrator"].includes(role));
-  const activeView = fleetOnly && view !== "my-fleet" ? "my-fleet" : view;
-  const visibleNavigation = demoMode
+  const isDemoExperience = authStatus === "demo";
+  const visibleNavigation = isDemoExperience
     ? navigation
-    : fleetOnly
-      ? navigation.filter((item) => item.id === "my-fleet")
-      : navigation.filter((item) => item.id !== "my-fleet" && (item.id !== "audit" || roles.some((role) => ["management", "auditor", "administrator"].includes(role))));
+    : navigation.filter((item) => visibleViewsForRoles(roles).includes(item.id));
+  const activeView = visibleNavigation.some((item) => item.id === view)
+    ? view
+    : visibleNavigation[0]?.id ?? "overview";
+
+  if (view === "preview") return <ProductPreview />;
+
+  if (authStatus === "loading") return <main className="accessLoading"><span className="liveDot" />Checking staff access</main>;
+  if (authStatus === "signed-out" && auth) return <SignInScreen auth={auth} />;
+  if (authStatus === "pending-access") return <AccessPendingScreen email={userEmail} onSignOut={() => { if (auth) void signOut(auth); }} />;
 
   return (
     <main className="shell">
       <aside className="sidebar">
         <div className="brandBlock">
-          <strong className="brand">Fleet Queue Control</strong>
-          <span>Refinery operations</span>
+          <span className="sidebarBrandMark"><Truck size={18} /></span>
+          <div><strong className="brand">Fleet Queue Control</strong><span>Refinery operations</span></div>
         </div>
         <nav aria-label="Primary navigation">
+          <p className="navigationLabel">Operations</p>
           {visibleNavigation.map((item) => {
             const Icon = item.icon;
-            return item.enabled ? (
+            return (
               <a className={item.id === activeView ? "active" : undefined} href={`#${item.id}`} key={item.id}>
                 <Icon size={17} /><span>{item.label}</span>
               </a>
-            ) : (
-              <span aria-disabled="true" className="disabledNav" key={item.id} title={`${item.label} is planned for ${item.phase}`}>
-                <Icon size={17} /><span>{item.label}</span><small>{item.phase}</small>
-              </span>
             );
           })}
         </nav>
-        <div className="environmentState"><span className={demoMode ? "demoDot" : "liveDot"} /><div><strong>{demoMode ? "Demonstration data" : "Firebase connected"}</strong><small>{demoMode ? "Actions stay in this preview" : siteId}</small></div></div>
+        {!demoMode ? <div className="accountState"><div><strong>{userEmail || "Signed-in staff"}</strong><small>{roles.join(", ")}</small></div><button aria-label="Sign out" className="sidebarIconButton" onClick={() => { if (auth) void signOut(auth); }} title="Sign out" type="button"><LogOut size={16} /></button></div> : null}
+        <div className="environmentState"><span className={isDemoExperience ? "demoDot" : "liveDot"} /><div><strong>{isDemoExperience ? "Demonstration data" : "Firebase connected"}</strong><small>{isDemoExperience ? "Actions stay in this preview" : siteId}</small></div></div>
       </aside>
 
       <section className="content">
         {dataMessage ? <p className="connectionMessage">Live data unavailable. Showing demonstration data.</p> : null}
         {activeView === "my-fleet" ? <FleetWorkspace demoMode={demoMode} fleetOfficerId={userId} onTrucksChange={setTrucks} queue={queue} siteId={siteId} trucks={trucks} /> : null}
-        {activeView === "overview" ? <OverviewScreen canRecalculate={demoMode || roles.some((role) => ["management", "administrator"].includes(role))} demoMode={demoMode} queue={queue} siteId={siteId} trucks={trucks} /> : null}
+        {activeView === "overview" ? <OverviewScreen canRecalculate={isDemoExperience || roles.some((role) => ["management", "administrator"].includes(role))} demoMode={demoMode} queue={queue} siteId={siteId} trucks={trucks} /> : null}
         {activeView === "trucks" ? <TrucksScreen demoMode={demoMode} officers={officers} onTrucksChange={setTrucks} siteId={siteId} trucks={trucks} /> : null}
         {activeView === "insurance" ? <InsuranceScreen demoMode={demoMode} onTrucksChange={setTrucks} siteId={siteId} trucks={trucks} /> : null}
         {activeView === "queue" ? <QueueScreen queue={queue} /> : null}
         {activeView === "programming" ? <ProgrammingScreen queue={queue} siteId={siteId} /> : null}
-        {activeView === "dispatch" ? <DispatchScreen demoMode={demoMode} siteId={siteId} /> : null}
+        {activeView === "orders" ? <OrdersScreen demoMode={demoMode} siteId={siteId} /> : null}
         {activeView === "bypass" ? <BypassScreen /> : null}
         {activeView === "audit" ? <AuditScreen demoMode={demoMode} siteId={siteId} /> : null}
       </section>

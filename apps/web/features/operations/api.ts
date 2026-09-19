@@ -11,11 +11,11 @@ import {
   type QueryDocumentSnapshot,
   type Unsubscribe
 } from "firebase/firestore";
-import { httpsCallable } from "firebase/functions";
 import { auth, db, functions } from "../../firebase/client";
+import { callOperationalApi } from "../../firebase/operations";
 
 export type InsuranceStatus = "VALID" | "EXPIRING_SOON" | "EXPIRED" | "UNKNOWN";
-export type TruckStatus = "ON_TRIP" | "QUEUED" | "INSURANCE_HOLD" | "PROGRAMMED" | "INACTIVE";
+export type TruckStatus = "ON_TRIP" | "QUEUED" | "AWAITING_AVAILABILITY" | "READY_FOR_PROGRAMMING" | "AWAITING_REPLACEMENT" | "INSURANCE_HOLD" | "PROGRAMMED" | "INACTIVE";
 
 export type FleetOfficerOption = { id: string; name: string };
 
@@ -30,6 +30,8 @@ export type TruckView = {
   insuranceStatus: InsuranceStatus;
   insuranceExpiry: string;
   isActive: boolean;
+  availabilityBatchId?: string;
+  availabilityQueueCycleId?: string;
 };
 
 export type QueueEntryView = {
@@ -181,7 +183,9 @@ function mapTruck(document: QueryDocumentSnapshot<DocumentData>): TruckView {
     currentStatus: String(data.currentStatus ?? "INACTIVE") as TruckStatus,
     insuranceStatus: String(data.latestInsuranceStatus ?? "UNKNOWN") as InsuranceStatus,
     insuranceExpiry: formatTimestamp(data.latestInsuranceExpiry),
-    isActive: data.isActive === true
+    isActive: data.isActive === true,
+    availabilityBatchId: typeof data.availabilityBatchId === "string" ? data.availabilityBatchId : undefined,
+    availabilityQueueCycleId: typeof data.availabilityQueueCycleId === "string" ? data.availabilityQueueCycleId : undefined
   };
 }
 
@@ -323,8 +327,7 @@ async function loadQueuePosition(siteId: string, queueCycleId: string): Promise<
     return demoQueue.find((entry) => entry.id === queueCycleId)?.position ?? 0;
   }
 
-  const callable = httpsCallable<{ siteId: string; queueCycleId: string }, { position: number }>(functions, "getQueuePosition");
-  return (await callable({ siteId, queueCycleId })).data.position;
+  return (await callOperationalApi<{ siteId: string; queueCycleId: string }, { position: number }>("getQueuePosition", { siteId, queueCycleId })).position;
 }
 
 export async function loadFleetOfficers(siteId: string): Promise<FleetOfficerOption[]> {
@@ -341,11 +344,7 @@ export async function loadValidatedBypasses(siteId: string): Promise<ValidatedBy
   if (!functions || !auth?.currentUser) {
     return [demoBypassOption];
   }
-  const callable = httpsCallable<{ siteId: string }, ValidatedBypassOption[]>(
-    functions,
-    "listValidatedBypasses"
-  );
-  return (await callable({ siteId })).data;
+  return callOperationalApi<{ siteId: string }, ValidatedBypassOption[]>("listValidatedBypasses", { siteId });
 }
 
 export async function saveTruck(input: {
@@ -364,11 +363,7 @@ export async function saveTruck(input: {
       internalCode: `TRK-${suffix}`
     };
   }
-  const callable = httpsCallable<
-    typeof input,
-    { truckId: string; created: boolean; internalCode: string }
-  >(functions, "saveTruck");
-  return (await callable(input)).data;
+  return callOperationalApi<typeof input, { truckId: string; created: boolean; internalCode: string }>("saveTruck", input);
 }
 
 export async function batchSaveTrucks(input: {
@@ -392,14 +387,10 @@ export async function batchSaveTrucks(input: {
       }))
     };
   }
-  const callable = httpsCallable<
-    typeof input,
-    {
-      createdCount: number;
-      trucks: Array<{ truckId: string; internalCode: string; registrationNumber: string }>;
-    }
-  >(functions, "batchSaveTrucks");
-  return (await callable(input)).data;
+  return callOperationalApi<typeof input, {
+    createdCount: number;
+    trucks: Array<{ truckId: string; internalCode: string; registrationNumber: string }>;
+  }>("batchSaveTrucks", input);
 }
 
 export async function updateInsurance(input: {
@@ -414,8 +405,7 @@ export async function updateInsurance(input: {
     const days = Math.ceil((Date.parse(input.expiryDate) - Date.now()) / 86400000);
     return { status: days <= 0 ? "EXPIRED" : days <= 30 ? "EXPIRING_SOON" : "VALID", queueReentered: days > 0 };
   }
-  const callable = httpsCallable<typeof input, { status: InsuranceStatus; queueReentered: boolean }>(functions, "updateInsurance");
-  return (await callable(input)).data;
+  return callOperationalApi<typeof input, { status: InsuranceStatus; queueReentered: boolean }>("updateInsurance", input);
 }
 
 export async function previewProgramming(input: {
@@ -450,8 +440,7 @@ export async function previewProgramming(input: {
       : [];
     return { requestedSize: input.requestedSize, fifoCount, bypassCount: bypass.length, items: [...fifo, ...bypass] };
   }
-  const callable = httpsCallable<typeof input, ProgrammingPreview>(functions, "previewProgrammingBatch");
-  return (await callable(input)).data;
+  return callOperationalApi<typeof input, ProgrammingPreview>("previewProgrammingBatch", input);
 }
 
 export async function confirmProgramming(input: {
@@ -470,6 +459,48 @@ export async function confirmProgramming(input: {
       atcCount: input.atcAssignments.length
     };
   }
-  const callable = httpsCallable<typeof input, ProgrammingResult>(functions, "confirmProgrammingBatch");
-  return (await callable(input)).data;
+  return callOperationalApi<typeof input, ProgrammingResult>("confirmProgrammingBatch", input);
+}
+
+export type ImportedOrderOption = {
+  orderId: string;
+  atcNo: string;
+  salesOrderNo: string;
+  customerName: string;
+  dprpCustomerName?: string;
+  receivingCustomerName?: string;
+  volume?: number;
+  expectedDeliveryDate?: string;
+};
+
+export type AvailabilityBatch = {
+  batchId: string;
+  humanCode: string;
+  status: string;
+  items: Array<{ queueCycleId: string; truckId: string; batchOrder: number; availabilityStatus: string; expiresAt?: string }>;
+};
+
+export async function startAvailability(input: { siteId: string; requestedSize: number; includeBypassAuthorizationIds?: string[] }): Promise<{ batchId: string; humanCode: string; expiresAt: string; requestedSize: number }> {
+  if (!functions || !auth?.currentUser) return { batchId: `demo-availability-${Date.now()}`, humanCode: "AV-DEMO", expiresAt: new Date(Date.now() + 3600000).toISOString(), requestedSize: input.requestedSize };
+  return callOperationalApi<typeof input, { batchId: string; humanCode: string; expiresAt: string; requestedSize: number }>("startAvailabilityBatch", input);
+}
+
+export async function loadAvailabilityBatch(input: { siteId: string; batchId: string; requestedSize?: number }): Promise<AvailabilityBatch> {
+  if (!functions || !auth?.currentUser) return { batchId: input.batchId, humanCode: "AV-DEMO", status: "AWAITING_AVAILABILITY", items: demoQueue.slice(0, input.requestedSize ?? 3).map((entry, index) => ({ queueCycleId: entry.id, truckId: entry.truckId, batchOrder: index + 1, availabilityStatus: "CONFIRMED" })) };
+  return callOperationalApi<typeof input, AvailabilityBatch>("getAvailabilityBatch", input);
+}
+
+export async function loadAvailableOrders(siteId: string): Promise<ImportedOrderOption[]> {
+  if (!functions || !auth?.currentUser) return demoQueue.slice(0, 10).map((entry, index) => ({ orderId: `demo-order-${index}`, atcNo: `04724${38 + index}`, salesOrderNo: `21000019${70 + index}`, customerName: "SUS Oil and Gas Ltd", dprpCustomerName: "SUS Oil and Gas Ltd", receivingCustomerName: `Customer ${index + 1}`, volume: 50000 }));
+  return callOperationalApi<{ siteId: string }, ImportedOrderOption[]>("listAvailableOrders", { siteId });
+}
+
+export async function confirmProgrammingWithOrders(input: { siteId: string; batchId: string; orderAssignments: Array<{ queueCycleId: string; orderId: string }> }): Promise<{ batchId: string; humanCode: string; confirmedSize: number; atcCount: number }> {
+  if (!functions || !auth?.currentUser) return { batchId: input.batchId, humanCode: "PB-DEMO", confirmedSize: input.orderAssignments.length, atcCount: input.orderAssignments.length };
+  return callOperationalApi<typeof input, { batchId: string; humanCode: string; confirmedSize: number; atcCount: number }>("confirmProgrammingWithOrders", input);
+}
+
+export async function confirmAvailability(input: { siteId: string; batchId: string; queueCycleId: string }): Promise<{ queueCycleId: string; status: string }> {
+  if (!functions || !auth?.currentUser) return { queueCycleId: input.queueCycleId, status: "READY_FOR_PROGRAMMING" };
+  return callOperationalApi<typeof input, { queueCycleId: string; status: string }>("confirmTruckAvailability", input);
 }

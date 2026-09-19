@@ -9,8 +9,8 @@ import {
   type QueryDocumentSnapshot,
   type Unsubscribe
 } from "firebase/firestore";
-import { httpsCallable } from "firebase/functions";
 import { auth, db, functions } from "../../firebase/client";
+import { callOperationalApi } from "../../firebase/operations";
 
 export type DailyMetricsView = {
   id: string;
@@ -186,8 +186,7 @@ export async function recalculateMetrics(siteId: string, demoMode: boolean): Pro
     await new Promise((resolve) => setTimeout(resolve, 500));
     return demoDailyMetrics;
   }
-  const callable = httpsCallable<{ siteId: string }, DailyMetricsView>(functions, "recalculateDailyMetrics");
-  return (await callable({ siteId })).data;
+  return callOperationalApi<{ siteId: string }, DailyMetricsView>("recalculateDailyMetrics", { siteId });
 }
 
 export function downloadAuditCsv(events: AuditEventView[]): void {

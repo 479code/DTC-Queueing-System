@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, X } from "lucide-react";
+import { Check, Clock3, KeyRound, ListOrdered, ShieldCheck, X } from "lucide-react";
 import {
   approveBypassRequest,
   demoBypassRequests,
@@ -112,14 +112,12 @@ export function BypassScreen() {
 
   return (
     <>
-      <header className="pageHeader">
-        <div><h1>Bypass Requests</h1><p>Approved exceptions remain explicit and fully auditable.</p></div>
-        <span className="pendingCount">{requests.length} pending</span>
-      </header>
+      <header className="bypassCommandHeader"><div><p className="eyebrow">Overseer decision desk</p><h1>Bypass approvals</h1><p>Review priority requests without weakening the canonical FIFO queue or the audit record behind it.</p></div><span className="bypassPendingCount"><Clock3 size={17} /><span><b>{requests.length}</b> pending review</span></span></header>
       {message ? <p className="message" role="status">{message}</p> : null}
-      <div className="workspaceGrid" id="requests">
-        <section className="requestList" aria-label="Pending bypass requests">
-          <div className="sectionHeading"><div><h2>Approval queue</h2><p>Oldest requests should be reviewed first.</p></div></div>
+      <section className="bypassGuardrail"><div><ShieldCheck size={20} /><div><span>Controlled exception process</span><strong>Approval issues a truck-specific, single-use OTP. It does not change FIFO until the fleet officer validates that code.</strong></div></div><div><ListOrdered size={16} /><span>Queue order remains protected</span></div></section>
+      <div className="workspaceGrid bypassWorkbench" id="requests">
+        <section className="requestList bypassRequestList" aria-label="Pending bypass requests">
+          <div className="sectionHeading bypassListHeading"><div><span>Pending approval queue</span><h2>Requests waiting for a decision</h2><p>Review the oldest request first, then record approval or rejection.</p></div></div>
           {loading ? <p className="empty">Loading requests...</p> : null}
           {!loading && requests.length === 0 ? <p className="empty">No bypass requests are waiting for review.</p> : null}
           {requests.map((request) => (
@@ -131,9 +129,9 @@ export function BypassScreen() {
             </button>
           ))}
         </section>
-        <section className="requestDetail" aria-live="polite">
+        <section className="requestDetail bypassDetailPanel" aria-live="polite">
           {selected ? <>
-            <div className="detailHeader"><div><p className="eyebrow">Bypass request {selected.id}</p><h2>{selected.truckRegistration}</h2><p className="driver">Driver: {selected.driverName}</p></div><span className="statusPill">Pending</span></div>
+            <div className="detailHeader"><div><p className="eyebrow">Bypass decision</p><h2>{selected.truckRegistration}</h2><p className="driver">Driver: {selected.driverName} · Request {selected.id}</p></div><span className="statusPill">Pending</span></div>
             <dl className="detailGrid">
               <div><dt>Current position</dt><dd className="position">#{selected.queuePosition}</dd><span>{selected.trucksAhead} trucks ahead</span></div>
               <div><dt>Requested by</dt><dd>{selected.requestedByName}</dd></div>

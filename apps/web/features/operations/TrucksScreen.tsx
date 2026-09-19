@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { FilePlus2, Pencil, Plus, Search } from "lucide-react";
+import { FilePlus2, ListOrdered, Pencil, Plus, Search, ShieldCheck, Truck } from "lucide-react";
 import {
   saveTruck,
   type FleetOfficerOption,
@@ -115,11 +115,8 @@ export function TrucksScreen({
 
   return (
     <>
-      <header className="pageHeader">
-        <div>
-          <h1>Trucks</h1>
-          <p>Truck identity, driver, assignment, and operating status.</p>
-        </div>
+      <header className="trucksCommandHeader">
+        <div><p className="eyebrow">Fleet registry</p><h1>Trucks and drivers</h1><p>Maintain the trucks, drivers, and fleet assignments that move through the refinery queue.</p></div>
         <div className="headerActions">
           <button className="secondaryButton commandButton" onClick={() => { setMessage(""); setBatchOpen(true); }} type="button"><FilePlus2 size={17} /> Batch add</button>
           <button className="primaryButton commandButton" onClick={() => openForm()} type="button"><Plus size={17} /> Add truck</button>
@@ -128,8 +125,10 @@ export function TrucksScreen({
 
       {message ? <p className="successMessage" role="status">{message}</p> : null}
 
-      <section className="dataPanel">
-        <div className="tableToolbar">
+      <section className="truckStatusStrip" aria-label="Truck registry status"><div><Truck size={18} /><span>Registered trucks</span><strong>{trucks.length}</strong></div><i /><div><ListOrdered size={18} /><span>In FIFO queue</span><strong>{trucks.filter((truck) => truck.currentStatus === "QUEUED").length}</strong></div><i /><div><Truck size={18} /><span>On trip</span><strong>{trucks.filter((truck) => truck.currentStatus === "ON_TRIP").length}</strong></div><i /><div><ShieldCheck size={18} /><span>Insurance attention</span><strong>{trucks.filter((truck) => truck.insuranceStatus !== "VALID").length}</strong></div></section>
+      <section className="dataPanel truckRegisterPanel">
+        <div className="truckRegisterHeading"><div><span>Fleet register</span><h2>Every truck available to operations</h2><p>Use the register to find an assignment, update a driver, or add new trucks in a batch.</p></div><span>{filtered.length} shown</span></div>
+        <div className="tableToolbar truckToolbar">
           <label className="searchField">
             <Search size={16} />
             <input aria-label="Search trucks" onChange={(event) => setQueryText(event.target.value)} placeholder="Search truck, driver, or code" value={queryText} />

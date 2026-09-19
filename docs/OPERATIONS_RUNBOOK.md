@@ -1,5 +1,18 @@
 # Operations Runbook
 
+## Current Order and Availability Workflow
+
+Treat incoming `.xlsx` files as order-and-ATC workbooks, not dispatch reports.
+The required columns are `ATC NO` and `SALES ORDER NO`. Preserve the source
+file in the private Railway Bucket and use the import result to resolve any
+duplicate or malformed ATC before programming begins.
+
+The Railway worker checks availability requests continuously. After one hour,
+it opens the slot to the next eligible FIFO truck. When that next truck
+confirms, the timed-out truck is returned to the back of the list
+automatically. Do not attempt to change queue states, nominate replacements,
+or restore positions directly in Firestore.
+
 ## Before Production Deployment
 
 1. Create separate Firebase projects for development, staging, and production. Do not deploy a test project with production credentials.
@@ -21,18 +34,18 @@ Configure these alert policies in the production Google Cloud project. Route cri
 | Dispatch import failure | Any import reaches `FAILED` | High | Review the import error, preserve the source workbook, correct it, and submit a new import. Do not edit result rows directly. |
 | Firestore backup failure | Any configured backup/export job fails | Critical | Investigate before the next scheduled backup and record resolution in the operational log. |
 
-Cloud Functions automatically writes execution logs to Cloud Logging. Keep logs and Error Reporting enabled, and make the function name, site ID, request ID, import ID, batch ID, and audit event ID available as structured context where applicable. Never log OTP values, OTP hashes, dispatch workbook contents, or user credentials.
+Railway captures API and worker execution logs. Keep Railway logging and Firebase Error Reporting enabled, and make the operation name, site ID, request ID, import ID, batch ID, and audit event ID available as structured context where applicable. Never log OTP values, OTP hashes, dispatch workbook contents, or user credentials.
 
 ## Budget Controls
 
 Enable billing budgets and email alerts for the production billing account. Start with alerts at 50%, 75%, 90%, and 100% of the approved monthly operating budget, then revise thresholds after the first month of real usage. A billing budget is an alerting control, not a technical spending cap; operational owners must investigate the source of unexpected usage promptly.
 
-Review Firestore reads, Cloud Functions invocations, Cloud Storage volume, and outbound network use monthly. Set a separate lower budget for staging to catch accidental load tests or import loops before they affect production spending.
+Review Firestore reads, Railway API/worker usage, Railway Bucket volume, and outbound network use monthly. Set a separate lower budget for staging to catch accidental load tests or import loops before they affect production spending.
 
 ## Backup And Restore
 
 1. Enable the strongest Firestore backup or point-in-time recovery option available for the production location and retain it according to the refinery's data-retention policy.
-2. Keep dispatch source spreadsheets in Cloud Storage with a documented retention policy. Do not delete a source file merely because its import was rejected; it may be needed for investigation.
+2. Keep dispatch source spreadsheets in the private Railway Bucket with a documented retention policy. Do not delete a source file merely because its import was rejected; it may be needed for investigation.
 3. Test restoration at least quarterly in a separate recovery project. Restore data there first, verify document counts and sample audit trails, and obtain operational approval before any production recovery.
 4. Never restore directly over live operational data during an active programming window. Pause affected operations, preserve current evidence, agree the recovery point, and announce the restored state before resuming.
 5. Record every restore exercise and real recovery: initiator, approval, source backup, time range, validation result, and follow-up actions.

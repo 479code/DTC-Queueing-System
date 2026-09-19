@@ -2,9 +2,9 @@ import Constants from "expo-constants";
 import { PermissionsAndroid, Platform } from "react-native";
 import installations from "@react-native-firebase/installations";
 import messaging from "@react-native-firebase/messaging";
-import { httpsCallable } from "firebase/functions";
 import type { User } from "firebase/auth";
 import { functions } from "../../firebase/client";
+import { callOperationalApi } from "../../firebase/operations";
 
 type RegisterDeviceTokenInput = {
   siteId: string;
@@ -55,10 +55,6 @@ export async function registerPushNotifications(
   }
 
   const deviceId = await installations().getId();
-  const register = httpsCallable<RegisterDeviceTokenInput, { registered: true }>(
-    functions,
-    "registerDeviceToken"
-  );
   const appVersion = Constants.expoConfig?.version;
   const common = {
     siteId,
@@ -67,6 +63,7 @@ export async function registerPushNotifications(
     ...(appVersion ? { appVersion } : {})
   };
 
+  const register = (input: RegisterDeviceTokenInput) => callOperationalApi<RegisterDeviceTokenInput, { registered: true }>("registerDeviceToken", input);
   await register({
     ...common,
     fcmToken: await messaging().getToken()
@@ -83,12 +80,7 @@ export async function unregisterPushNotifications(user: User): Promise<void> {
   const siteId = await getSiteId(user);
   if (!siteId) return;
 
-  const unregister = httpsCallable<
-    UnregisterDeviceTokenInput,
-    { registered: false }
-  >(functions, "unregisterDeviceToken");
-
-  await unregister({
+  await callOperationalApi<UnregisterDeviceTokenInput, { registered: false }>("unregisterDeviceToken", {
     siteId,
     deviceId: await installations().getId()
   });

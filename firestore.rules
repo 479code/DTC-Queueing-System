@@ -71,6 +71,16 @@ service cloud.firestore {
         }
       }
 
+      match /orderImports/{importId} {
+        allow read: if hasRole(siteId, "programmingOfficer") || hasRole(siteId, "administrator");
+        allow write: if false;
+      }
+
+      match /orders/{orderId} {
+        allow read: if hasRole(siteId, "programmingOfficer") || hasRole(siteId, "administrator");
+        allow write: if false;
+      }
+
       match /bypassRequests/{requestId} {
         allow read: if hasRole(siteId, "overseer")
           || hasRole(siteId, "management")

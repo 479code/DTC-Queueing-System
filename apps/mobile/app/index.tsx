@@ -8,7 +8,7 @@ import {
   Text,
   View
 } from "react-native";
-import { demoFleetHome, loadFleetHome } from "../src/features/fleet/api";
+import { confirmMobileAvailability, demoFleetHome, loadFleetHome } from "../src/features/fleet/api";
 
 export default function HomeScreen() {
   const [fleet, setFleet] = useState(demoFleetHome);
@@ -27,6 +27,7 @@ export default function HomeScreen() {
   const nextTruck = nextQueue ? fleet.trucks.find((truck) => truck.id === nextQueue.truckId) : undefined;
   const expiring = fleet.trucks.filter((truck) => truck.insuranceStatus === "EXPIRING_SOON").length;
   const expired = fleet.trucks.filter((truck) => truck.insuranceStatus === "EXPIRED" || truck.currentStatus === "INSURANCE_HOLD").length;
+  const availabilityTruck = fleet.trucks.find((truck) => truck.currentStatus === "AWAITING_AVAILABILITY");
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -45,6 +46,9 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.actions}>
+          {availabilityTruck ? <Pressable onPress={() => void confirmMobileAvailability(fleet.siteId, availabilityTruck).then(() => loadFleetHome().then(setFleet))} style={styles.darkAction}>
+            <Text style={styles.darkActionText}>Confirm {availabilityTruck.registrationNumber} Availability</Text>
+          </Pressable> : null}
           <Pressable onPress={() => router.push("/returns")} style={styles.darkAction}>
             <Text style={styles.darkActionText}>Report Return</Text>
           </Pressable>
