@@ -162,6 +162,36 @@ async function verifyRequest(request: IncomingMessage) {
   return { uid: decoded.uid, siteId, roles: profileRoles };
 }
 
+async function bootstrapInitialAdministrator(): Promise<void> {
+  const uid = process.env.INITIAL_ADMIN_UID?.trim();
+  if (!uid) return;
+
+  const siteId = "default-site";
+  const roles: UserRole[] = ["administrator"];
+  const [authUser, profileSnapshot] = await Promise.all([
+    auth.getUser(uid),
+    db.collection("sites").doc(siteId).collection("users").doc(uid).get()
+  ]);
+  const profileRef = profileSnapshot.ref;
+  const now = new Date();
+
+  await profileRef.set({
+    siteId,
+    authUid: uid,
+    name: authUser.displayName ?? authUser.email?.split("@")[0] ?? "Initial administrator",
+    ...(authUser.email ? { email: authUser.email } : {}),
+    roles,
+    isActive: true,
+    mfaRequired: false,
+    updatedAt: now,
+    ...(profileSnapshot.exists ? {} : { createdAt: now })
+  }, { merge: true });
+
+  await auth.setCustomUserClaims(uid, { siteId, roles });
+  await auth.revokeRefreshTokens(uid);
+  console.info(`Initial administrator access assigned for ${uid}. Remove INITIAL_ADMIN_UID to disable bootstrap.`);
+}
+
 const server = createServer(async (request, response) => {
   setCorsHeaders(response, request);
   if (request.method === "OPTIONS") {
@@ -248,6 +278,13 @@ const server = createServer(async (request, response) => {
   }
 });
 
-server.listen(port, "0.0.0.0", () => {
-  console.log(`Refinery Queue API listening on port ${port}`);
-});
+bootstrapInitialAdministrator()
+  .then(() => {
+    server.listen(port, "0.0.0.0", () => {
+      console.log(`Refinery Queue API listening on port ${port}`);
+    });
+  })
+  .catch((error: unknown) => {
+    console.error("Initial administrator bootstrap failed.", error);
+    process.exitCode = 1;
+  });
