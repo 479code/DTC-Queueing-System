@@ -32,6 +32,7 @@ export type TruckView = {
   isActive: boolean;
   availabilityBatchId?: string;
   availabilityQueueCycleId?: string;
+  availabilityExpiresAtMillis?: number;
 };
 
 export type QueueEntryView = {
@@ -189,6 +190,19 @@ function mapTruck(document: QueryDocumentSnapshot<DocumentData>): TruckView {
   };
 }
 
+// The one-hour deadline lives on the queue cycle, so fetch it for trucks that are waiting to confirm.
+async function withAvailabilityDeadlines(siteId: string, trucks: TruckView[]): Promise<TruckView[]> {
+  return Promise.all(trucks.map(async (truck) => {
+    if (!db || truck.currentStatus !== "AWAITING_AVAILABILITY" || !truck.availabilityQueueCycleId) return truck;
+    try {
+      const cycle = await getDoc(doc(db, "sites", siteId, "queueCycles", truck.availabilityQueueCycleId));
+      return { ...truck, availabilityExpiresAtMillis: timestampMillis(cycle.data()?.availabilityExpiresAt) };
+    } catch {
+      return truck;
+    }
+  }));
+}
+
 export function subscribeToTrucks(
   siteId: string,
   onData: (trucks: TruckView[]) => void,
@@ -224,7 +238,11 @@ export function subscribeToAssignedTrucks(
       collection(db, "sites", siteId, "trucks"),
       where("assignedFleetOfficerId", "==", fleetOfficerId)
     ),
-    (snapshot) => onData(snapshot.docs.map(mapTruck).sort((a, b) => a.registrationNumber.localeCompare(b.registrationNumber))),
+    (snapshot) => {
+      void withAvailabilityDeadlines(siteId, snapshot.docs.map(mapTruck).sort((a, b) => a.registrationNumber.localeCompare(b.registrationNumber)))
+        .then(onData)
+        .catch((error: unknown) => onError(error instanceof Error ? error.message : "Unable to load assigned trucks."));
+    },
     (error) => onError(error.message)
   );
 }

@@ -448,7 +448,10 @@
 .fleetHelpBody strong { font-size: 13px; }
 .fleetHelpBody p { color: var(--muted); font-size: 11px; line-height: 1.45; margin: 6px 0 14px; }
 .fleetTruckList { display: grid; }
-.fleetTruckRow { align-items: center; border-top: 1px solid var(--border); display: grid; gap: 14px; grid-template-columns: minmax(165px, 1fr) 104px minmax(140px, .8fr) auto; min-height: 74px; padding: 12px 16px; }
+.fleetTruckRow { align-items: center; border-top: 1px solid var(--border); display: grid; gap: 14px; grid-template-columns: minmax(165px, 1fr) minmax(104px, max-content) minmax(120px, .7fr) auto; min-height: 74px; padding: 12px 16px; }
+.fleetTruckRow > .dataStatus { justify-self: start; white-space: normal; }
+.availabilityCountdown { align-items: center; color: var(--muted); display: flex; font-size: 11px; font-variant-numeric: tabular-nums; font-weight: 700; gap: 5px; white-space: nowrap; }
+.availabilityCountdown.urgent { color: #a13b34; }
 .fleetTruckRow > div:first-child strong, .fleetTruckRow > div:first-child span { display: block; }
 .fleetTruckRow > div:first-child strong { font-size: 13px; }
 .fleetTruckRow > div:first-child span, .fleetInsurance > span { color: var(--muted); font-size: 10px; margin-top: 4px; }
