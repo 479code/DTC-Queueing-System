@@ -37,6 +37,12 @@ each service so workspace packages are built in the right order:
 | `api` | `corepack pnpm --filter @refinery/functions build && corepack pnpm --filter @refinery/api build` | `corepack pnpm --filter @refinery/api start` |
 | `worker` | `corepack pnpm --filter @refinery/functions build && corepack pnpm --filter @refinery/worker build` | `corepack pnpm --filter @refinery/worker start` |
 
+Each build script now builds the workspace packages it depends on, so a clean
+Railway builder compiles `@refinery/shared`, `@refinery/types` and
+`@refinery/validation` before the service itself. Without that step the
+functions package compiles against missing declarations and fails with
+`'data' is of type 'unknown'`.
+
 Set the API health check path to `/health`. The worker is a background service
 and does not expose a public domain.
 

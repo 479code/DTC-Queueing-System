@@ -5,7 +5,7 @@
   "type": "module",
   "main": "lib/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "corepack pnpm --filter @refinery/shared --filter @refinery/types --filter @refinery/validation build && tsc",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
     "test": "tsc && node --test tests/batchTrucks.test.mjs tests/dispatchReconciliation.test.mjs tests/insuranceStatus.test.mjs tests/metricsSummary.test.mjs tests/otp.test.mjs tests/programmingAtc.test.mjs tests/queuePosition.test.mjs tests/pushPayload.test.mjs",
