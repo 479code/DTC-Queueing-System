@@ -138,9 +138,6 @@ importers:
 
   functions:
     dependencies:
-      '@aws-sdk/client-s3':
-        specifier: ^3.750.0
-        version: 3.1132.0
       '@refinery/shared':
         specifier: workspace:*
         version: link:../packages/shared
