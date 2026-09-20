@@ -879,3 +879,9 @@ a.accessSubmit { text-decoration: none; }
 .issuedCode span { font-size: 10px; font-weight: 800; letter-spacing: .08em; opacity: .8; text-transform: uppercase; }
 .issuedCode strong { font-size: 26px; font-variant-numeric: tabular-nums; letter-spacing: .22em; }
 .fleetOtpHint { font-size: 11px; line-height: 1.5; margin: 14px 0 0; opacity: .75; }
+.bypassStatusList { border-top: 1px solid rgb(255 255 255 / 16%); display: grid; gap: 10px; margin-top: 16px; padding-top: 14px; }
+.bypassStatusRow { align-items: start; display: flex; gap: 12px; justify-content: space-between; }
+.bypassStatusRow strong { display: block; font-size: 12px; }
+.bypassStatusRow small { display: block; font-size: 10px; margin-top: 3px; opacity: .72; }
+.bypassStatusRow > div:last-child { text-align: right; }
+.bypassRejection { max-width: 210px; }

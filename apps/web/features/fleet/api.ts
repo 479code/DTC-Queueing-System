@@ -31,6 +31,57 @@ export async function requestFleetBypass(input: {
   return callOperationalApi<typeof input, { bypassRequestId: string; queuePositionAtRequest: number; numberOfTrucksBypassed: number }>("requestBypass", input);
 }
 
+export type MyBypassRequest = {
+  id: string;
+  truckId: string;
+  status: string;
+  reasonCategory: string;
+  requestedAt: string;
+  requestedAtMillis: number;
+  rejectionReason?: string;
+};
+
+function requestTime(value: unknown): { text: string; millis: number } {
+  if (typeof value === "object" && value !== null && "toDate" in value && typeof value.toDate === "function") {
+    const date = (value as { toDate: () => Date }).toDate();
+    return {
+      text: new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(date),
+      millis: date.getTime()
+    };
+  }
+  return { text: "Not recorded", millis: 0 };
+}
+
+// A fleet officer must be able to see what happened to a request they made,
+// including why an overseer rejected it.
+export function subscribeToMyBypassRequests(
+  siteId: string,
+  userId: string,
+  onData: (requests: MyBypassRequest[]) => void
+): Unsubscribe {
+  if (!db || !userId) {
+    onData([]);
+    return () => undefined;
+  }
+  return onSnapshot(
+    query(collection(db, "sites", siteId, "bypassRequests"), where("fleetOfficerId", "==", userId)),
+    (snapshot) => onData(snapshot.docs.map((item) => {
+      const data = item.data();
+      const when = requestTime(data.requestedAt);
+      return {
+        id: item.id,
+        truckId: String(data.truckId ?? ""),
+        status: String(data.status ?? "PENDING"),
+        reasonCategory: String(data.reasonCategory ?? ""),
+        requestedAt: when.text,
+        requestedAtMillis: when.millis,
+        rejectionReason: typeof data.rejectionReason === "string" ? data.rejectionReason : undefined
+      };
+    }).sort((left, right) => right.requestedAtMillis - left.requestedAtMillis).slice(0, 8)),
+    () => onData([])
+  );
+}
+
 export type IssuedBypassCode = {
   id: string;
   truckId: string;
