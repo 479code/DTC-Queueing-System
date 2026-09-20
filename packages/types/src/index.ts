@@ -24,6 +24,7 @@ export type AccessView =
   | "overview"
   | "staff"
   | "my-fleet"
+  | "my-bypass"
   | "trucks"
   | "insurance"
   | "queue"
@@ -34,7 +35,7 @@ export type AccessView =
   | "audit";
 
 const roleViews: Record<UserRole, readonly AccessView[]> = {
-  fleetOfficer: ["my-fleet"],
+  fleetOfficer: ["my-fleet", "my-bypass"],
   programmingOfficer: ["overview", "queue", "programming", "programmed", "orders"],
   overseer: ["overview", "queue", "programmed", "bypass"],
   management: ["overview", "queue", "programmed", "audit"],
@@ -47,10 +48,10 @@ export function isFleetOnlyRoleSet(roles: readonly UserRole[]): boolean {
 }
 
 export function visibleViewsForRoles(roles: readonly UserRole[]): AccessView[] {
-  if (isFleetOnlyRoleSet(roles)) return ["my-fleet"];
+  if (isFleetOnlyRoleSet(roles)) return ["my-fleet", "my-bypass"];
 
   return [...new Set(roles.flatMap((role) => roleViews[role]))]
-    .filter((view) => view !== "my-fleet");
+    .filter((view) => view !== "my-fleet" && view !== "my-bypass");
 }
 
 export type TruckStatus =

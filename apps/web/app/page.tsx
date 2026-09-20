@@ -5,6 +5,7 @@ import {
   BarChart3,
   CheckCircle2,
   ClipboardCheck,
+  KeyRound,
   FileSearch,
   ListOrdered,
   LogOut,
@@ -41,6 +42,7 @@ import {
   type TruckView
 } from "../features/operations/api";
 import { InsuranceScreen } from "../features/operations/InsuranceScreen";
+import { BypassWorkspace } from "../features/fleet/BypassWorkspace";
 import { ProgrammedScreen } from "../features/operations/ProgrammedScreen";
 import { ProgrammingScreen } from "../features/operations/ProgrammingScreen";
 import { QueueScreen } from "../features/operations/QueueScreen";
@@ -58,6 +60,7 @@ type NavigationItem = {
 
 const navigation: NavigationItem[] = [
   { id: "my-fleet", label: "My Fleet", icon: UserRound },
+  { id: "my-bypass", label: "My Bypasses", icon: KeyRound },
   { id: "overview", label: "Overview", icon: BarChart3 },
   { id: "staff", label: "Staff Access", icon: UsersRound },
   { id: "queue", label: "Live Queue", icon: ListOrdered },
@@ -232,6 +235,7 @@ export default function Page() {
 
       <section className="content">
         {dataMessage ? <p className="connectionMessage">{dataMessage}</p> : null}
+        {activeView === "my-bypass" ? <BypassWorkspace fleetOfficerId={userId} queue={queue} siteId={siteId} trucks={trucks} /> : null}
         {activeView === "my-fleet" ? <FleetWorkspace demoMode={demoMode} fleetOfficerId={userId} onTrucksChange={setTrucks} queue={queue} siteId={siteId} trucks={trucks} /> : null}
         {activeView === "overview" ? <OverviewScreen canViewAuditEvents={isDemoExperience || roles.some((role) => ["management", "auditor", "administrator"].includes(role))} canRecalculate={isDemoExperience || roles.some((role) => ["management", "administrator"].includes(role))} demoMode={demoMode} queue={queue} siteId={siteId} trucks={trucks} /> : null}
         {activeView === "staff" ? <StaffAccessScreen currentUserId={userId} siteId={siteId} /> : null}
