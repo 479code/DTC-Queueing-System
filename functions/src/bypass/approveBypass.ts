@@ -174,10 +174,11 @@ export const approveBypass = validatedCall(
         otp
       });
 
+      // The code is delivered to the assigned fleet officer, so the approver
+      // never receives a copy to pass on.
       return {
         bypassRequestId: data.bypassRequestId,
         authorizationId: authorizationRef.id,
-        otp,
         expiresAt: expiresAt.toDate().toISOString(),
         truckId
       };

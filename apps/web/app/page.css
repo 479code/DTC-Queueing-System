@@ -878,3 +878,4 @@ a.accessSubmit { text-decoration: none; }
 .issuedCode { background: rgb(255 255 255 / 10%); border: 1px solid rgb(255 255 255 / 18%); border-radius: 8px; display: grid; gap: 6px; padding: 12px 14px; }
 .issuedCode span { font-size: 10px; font-weight: 800; letter-spacing: .08em; opacity: .8; text-transform: uppercase; }
 .issuedCode strong { font-size: 26px; font-variant-numeric: tabular-nums; letter-spacing: .22em; }
+.fleetOtpHint { font-size: 11px; line-height: 1.5; margin: 14px 0 0; opacity: .75; }

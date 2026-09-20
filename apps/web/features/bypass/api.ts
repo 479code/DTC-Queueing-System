@@ -32,7 +32,6 @@ export type BypassRequestView = {
 export type ApprovedBypass = {
   bypassRequestId: string;
   authorizationId: string;
-  otp: string;
   expiresAt: string;
   truckId: string;
 };
@@ -213,7 +212,6 @@ export async function approveBypassRequest(
     return {
       bypassRequestId: request.id,
       authorizationId: "AUTH-DEMO-481",
-      otp: "482193",
       expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
       truckId: request.truckId
     };

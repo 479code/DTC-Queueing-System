@@ -18,10 +18,6 @@ function formatReason(reason: string): string {
     : reason;
 }
 
-function formatOtp(otp: string): string {
-  return `${otp.slice(0, 3)} ${otp.slice(3)}`;
-}
-
 function secondsRemaining(expiresAt: string): number {
   return Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 1000));
 }
@@ -149,8 +145,8 @@ export function BypassScreen() {
       </div>
       {approved ? <div className="modalBackdrop" role="presentation"><section aria-labelledby="approval-title" aria-modal="true" className="otpDialog" role="dialog">
         <p className="eyebrow success">Bypass approved</p><h2 id="approval-title">{approvedRequest?.truckRegistration ?? approved.bypassRequestId}</h2>
-        <div className="otpPanel"><span>Authorization code</span><strong>{formatOtp(approved.otp)}</strong><p>{remaining > 0 ? `Valid for ${minutes}:${seconds}` : "Authorization expired"}</p></div>
-        <p className="otpNote">Show this code to the requesting fleet officer. It is displayed once and is bound to this request.</p>
+        <div className="otpPanel"><span>Authorization sent</span><strong>{remaining > 0 ? `${minutes}:${seconds}` : "Expired"}</strong><p>{remaining > 0 ? "Time left for the officer to validate" : "The officer must request a new bypass"}</p></div>
+        <p className="otpNote">The authorization code went straight to the assigned fleet officer. Nothing needs to be passed on by hand.</p>
         <button className="darkButton" onClick={() => { setApproved(null); setApprovedRequest(null); }} type="button">Back to approvals</button>
       </section></div> : null}
     </>
