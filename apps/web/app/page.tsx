@@ -215,7 +215,9 @@ export default function Page() {
     <main className="shell">
       <aside className="sidebar">
         <div className="brandBlock">
-          <span className="sidebarBrandMark"><Truck size={18} /></span>
+          <span aria-hidden="true" className="sidebarBrandMark">
+            <svg fill="none" height="16" viewBox="0 0 16 16" width="16"><rect fill="currentColor" height="2.6" rx="1.3" width="13" x="1.5" y="2.2" /><rect fill="currentColor" height="2.6" opacity=".7" rx="1.3" width="9" x="1.5" y="6.7" /><rect fill="currentColor" height="2.6" opacity=".45" rx="1.3" width="5" x="1.5" y="11.2" /></svg>
+          </span>
           <div><strong className="brand">Fleet Queue Control</strong><span>Refinery operations</span></div>
         </div>
         <nav aria-label="Primary navigation">
@@ -229,7 +231,13 @@ export default function Page() {
             );
           })}
         </nav>
-        {!demoMode ? <div className="accountState"><div><strong>{userEmail || "Signed-in staff"}</strong><small>{roles.join(", ")}</small></div><button aria-label="Sign out" className="sidebarIconButton" onClick={() => { if (auth) void signOut(auth); }} title="Sign out" type="button"><LogOut size={16} /></button></div> : null}
+        {!demoMode ? <div className="accountState">
+          <div className="accountIdentity">
+            <span className="accountAvatar" aria-hidden="true">{(userEmail || "?").slice(0, 1).toUpperCase()}</span>
+            <div><strong>{userEmail || "Signed-in staff"}</strong><small>{roles.map((role) => role.replace(/([A-Z])/g, " $1").replace(/^./, (value) => value.toUpperCase())).join(", ")}</small></div>
+          </div>
+          <button className="signOutButton" onClick={() => { if (auth) void signOut(auth); }} type="button"><LogOut size={15} />Sign out</button>
+        </div> : null}
         <div className="environmentState"><span className={isDemoExperience ? "demoDot" : "liveDot"} /><div><strong>{isDemoExperience ? "Demonstration data" : "Firebase connected"}</strong><small>{isDemoExperience ? "Actions stay in this preview" : siteId}</small></div></div>
       </aside>
 

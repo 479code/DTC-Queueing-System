@@ -747,9 +747,7 @@
 }
 
 /* Programming workspace */
-.programmingHeader { align-items: flex-end; display: flex; gap: 18px; justify-content: space-between; margin-bottom: 20px; }
-.programmingHeader h1 { font-size: 28px; line-height: 1.12; margin: 0; }
-.programmingHeader > div > p:last-child { color: var(--muted); font-size: 12px; margin: 7px 0 0; max-width: 620px; }
+
 .programmingQueueCount { align-items: center; background: #eef5ec; border: 1px solid #cfdfca; border-radius: 7px; color: #347245; display: flex; flex: 0 0 auto; gap: 10px; min-width: 152px; padding: 10px 12px; }
 .programmingQueueCount svg { color: #5a9955; }.programmingQueueCount span, .programmingQueueCount strong { display: block; }.programmingQueueCount span { color: #638268; font-size: 9px; font-weight: 800; text-transform: uppercase; }.programmingQueueCount strong { color: #2e4e34; font-size: 14px; margin-top: 3px; }
 .programmingSteps { align-items: center; display: flex; gap: 0; list-style: none; margin: 0 0 18px; padding: 0; }
@@ -769,21 +767,20 @@
 .programmingEmpty { background: #fbfcfa; flex: 1; min-height: 330px; }.programmingEmpty > span { align-items: center; background: #eaf3e7; border-radius: 50%; color: #639958; display: flex; height: 52px; justify-content: center; width: 52px; }.programmingEmpty h3 { color: #334238; font-size: 15px; margin: 13px 0 0; }.programmingEmpty p { color: #7c887e; margin-top: 6px; }.programmingEmpty > svg { color: #8aaa84; margin-top: 12px; }
 
 @media (max-width: 980px) {
-  .programmingHeader { align-items: flex-start; flex-direction: column; }
+
   .programmingWorkbench { grid-template-columns: 1fr; }
   .programmingSteps { max-width: 650px; }
 }
 
 @media (max-width: 620px) {
-  .programmingHeader h1 { font-size: 25px; }
+  
   .programmingSteps { align-items: flex-start; display: grid; gap: 12px; }.programmingSteps li:not(:last-child)::after { display: none; }.programmingSteps li { width: 100%; }.programmingSteps li > div { display: block; }
   .programmingPanelHeading { min-height: 0; padding: 17px 15px; }.programmingPanelStatus { display: none; }
   .programmingPreviewPanel .programmingRosterRow { padding: 14px; }.programmingPreviewPanel .availabilitySummary { padding: 12px 14px; }
 }
 
 /* Orders and ATCs workspace */
-.ordersCommandHeader { align-items: flex-end; display: flex; gap: 18px; justify-content: space-between; margin-bottom: 20px; }
-.ordersCommandHeader h1 { font-size: 28px; line-height: 1.12; margin: 0; }.ordersCommandHeader > div > p:last-child { color: var(--muted); font-size: 12px; margin: 7px 0 0; max-width: 630px; }
+
 .ordersReadyCount { align-items: center; background: #edf5eb; border: 1px solid #ceddca; border-radius: 7px; color: #4b8647; display: flex; flex: 0 0 auto; gap: 10px; min-width: 162px; padding: 10px 12px; }.ordersReadyCount svg { color: #70a563; }.ordersReadyCount span, .ordersReadyCount strong { display: block; }.ordersReadyCount span { color: #638468; font-size: 9px; font-weight: 800; text-transform: uppercase; }.ordersReadyCount strong { color: #2e4e34; font-size: 14px; margin-top: 3px; }
 .orderIntakeBoard { align-items: center; background: #293f30; border-radius: 8px; color: #f5f9f3; display: grid; gap: 20px; grid-template-columns: minmax(260px, 1fr) minmax(340px, auto); margin-bottom: 12px; padding: 18px 20px; }
 .orderIntakeIntro { align-items: center; display: flex; gap: 13px; }.orderIntakeIntro > span { align-items: center; background: #cbe9ae; border-radius: 6px; color: #29402e; display: flex; height: 39px; justify-content: center; width: 39px; }.orderIntakeIntro p, .orderIntakeIntro h2, .orderIntakeIntro small { display: block; margin: 0; }.orderIntakeIntro p { color: #bcd7ad; font-size: 9px; font-weight: 800; text-transform: uppercase; }.orderIntakeIntro h2 { font-size: 17px; margin-top: 4px; }.orderIntakeIntro small { color: #c9d5ca; font-size: 10px; margin-top: 4px; }
@@ -798,7 +795,7 @@
 }
 
 @media (max-width: 700px) {
-  .ordersCommandHeader { align-items: flex-start; flex-direction: column; }.ordersCommandHeader h1 { font-size: 25px; }
+ 
   .orderIntakeBoard { align-items: stretch; grid-template-columns: 1fr; }.orderIntakeAction { align-items: stretch; flex-direction: column; }.orderIntakeAction .orderFileButton, .orderIntakeAction .primaryButton { justify-content: center; max-width: none; width: 100%; }
   .ordersLiveStrip { align-items: flex-start; display: grid; gap: 11px; grid-template-columns: repeat(2, minmax(0, 1fr)); }.ordersLiveStrip > i { display: none; }.ordersLiveState { grid-column: 1 / -1; margin-left: 0; }
   .orderRegisterHeading { align-items: stretch; flex-direction: column; padding: 17px 15px; }.orderRegisterHeading .searchField { margin-top: 0; }
@@ -806,8 +803,7 @@
 }
 
 /* Fleet officer workspace */
-.fleetCommandHeader { align-items: flex-end; display: flex; gap: 18px; justify-content: space-between; margin-bottom: 20px; }
-.fleetCommandHeader h1 { font-size: 28px; line-height: 1.12; margin: 0; }.fleetCommandHeader > div > p:last-child { color: var(--muted); font-size: 12px; margin: 7px 0 0; max-width: 650px; }
+
 .fleetAssignedCount { align-items: center; background: #edf5eb; border: 1px solid #ceddca; border-radius: 7px; color: #4b8647; display: flex; flex: 0 0 auto; gap: 10px; min-width: 152px; padding: 10px 12px; }.fleetAssignedCount svg { color: #70a563; }.fleetAssignedCount span, .fleetAssignedCount strong { display: block; }.fleetAssignedCount span { color: #638468; font-size: 9px; font-weight: 800; text-transform: uppercase; }.fleetAssignedCount strong { color: #2e4e34; font-size: 14px; margin-top: 3px; }
 .fleetStatusStrip { align-items: stretch; background: #fff; border: 1px solid #d6ded5; border-radius: 7px; display: flex; gap: 0; margin: 0 0 18px; min-height: 74px; overflow: hidden; padding: 0; }.fleetStatusStrip > div { align-items: center; display: grid; flex: 1; gap: 2px 9px; grid-template-columns: 25px minmax(0, 1fr); padding: 12px 16px; }.fleetStatusStrip > div svg { color: #6b9a61; grid-row: 1 / span 2; }.fleetStatusStrip > div span, .fleetStatusStrip > div strong { display: block; }.fleetStatusStrip > div span { color: #748177; font-size: 9px; font-weight: 800; text-transform: uppercase; }.fleetStatusStrip > div strong { color: #2f3e34; font-size: 19px; line-height: 1; }.fleetStatusStrip > i { align-self: center; background: #dce3dc; height: 30px; width: 1px; }.fleetStatusStrip .criticalMetric svg, .fleetStatusStrip .criticalMetric strong { color: #b65743; }
 .fleetActionBoard { align-items: center; background: #293f30; border-radius: 8px; color: #f5f9f3; display: grid; gap: 20px; grid-template-columns: minmax(250px, 1fr) auto; margin-bottom: 18px; padding: 19px 20px; }.fleetActionIntro > span { color: #bcdaa6; font-size: 9px; font-weight: 800; text-transform: uppercase; }.fleetActionIntro h2 { font-size: 18px; line-height: 1.2; margin: 7px 0 5px; }.fleetActionIntro p { color: #c9d5ca; font-size: 10px; line-height: 1.5; margin: 0; }.fleetActionSet { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }.fleetActionSet .secondaryButton { background: transparent; border-color: #6e866f; color: #edf4ea; }.fleetActionSet .secondaryButton:hover { background: #3f5745; border-color: #a4bd91; }.fleetActionSet .primaryButton { background: #cbe9ae; border-color: #cbe9ae; color: #29402e; }.fleetActionSet .primaryButton:hover { background: #d8f2be; }.fleetActionSet button:disabled { background: #405346; border-color: #405346; color: #9baa9d; }
@@ -817,39 +813,42 @@
 .fleetRegisterPanel { border-color: #d5ded4; }.fleetRegisterHeading { align-items: flex-start; border-bottom: 1px solid #dbe2da; display: flex; gap: 16px; justify-content: space-between; min-height: 112px; padding: 19px 20px; }.fleetRegisterHeading > span { background: #eef5eb; border: 1px solid #d1e1cd; border-radius: 999px; color: #4d804d; font-size: 9px; font-weight: 800; padding: 6px 8px; text-transform: uppercase; white-space: nowrap; }.fleetRegisterPanel .fleetTruckRow { border-color: #e2e8e1; min-height: 78px; padding: 13px 20px; }.fleetRegisterPanel .fleetTruckRow:hover { background: #f7faf6; }.fleetRegisterPanel .fleetTruckRow > div:first-child strong { color: #34463a; font-size: 13px; }.fleetRegisterPanel .fleetRowActions .primaryButton { background: #2e7949; border-color: #2e7949; }.fleetRegisterPanel .fleetRowActions .textButton { color: #477d43; font-size: 10px; font-weight: 800; }.fleetRegisterPanel .fleetPosition { color: #4b794c; font-size: 10px; }.fleetRegisterPanel .nextInLine { color: #477d43 !important; }
 
 @media (max-width: 980px) { .fleetWorkbench { grid-template-columns: 1fr; }.fleetActionBoard { grid-template-columns: 1fr; }.fleetActionSet { justify-content: flex-start; } }
-@media (max-width: 700px) { .fleetCommandHeader { align-items: flex-start; flex-direction: column; }.fleetCommandHeader h1 { font-size: 25px; }.fleetAssignedCount { min-width: 0; }.fleetStatusStrip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }.fleetStatusStrip > i { display: none; }.fleetStatusStrip > div:nth-of-type(n + 3) { border-top: 1px solid #e1e7df; }.fleetActionBoard { padding: 18px; }.fleetActionSet { align-items: stretch; flex-direction: column; }.fleetActionSet .commandButton { justify-content: center; width: 100%; }.fleetPanelHeading, .fleetRegisterHeading { min-height: 0; padding: 17px 15px; }.fleetLiveState { display: none; }.fleetQueuePanel .fleetQueueRow { grid-template-columns: 48px minmax(0, 1fr) auto; padding: 13px 15px; }.fleetAuthorizationPanel { padding: 18px; }.fleetRegisterHeading > span { display: none; }.fleetRegisterPanel .fleetTruckRow { padding: 14px; } }
+@media (max-width: 700px) {.fleetAssignedCount { min-width: 0; }.fleetStatusStrip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }.fleetStatusStrip > i { display: none; }.fleetStatusStrip > div:nth-of-type(n + 3) { border-top: 1px solid #e1e7df; }.fleetActionBoard { padding: 18px; }.fleetActionSet { align-items: stretch; flex-direction: column; }.fleetActionSet .commandButton { justify-content: center; width: 100%; }.fleetPanelHeading, .fleetRegisterHeading { min-height: 0; padding: 17px 15px; }.fleetLiveState { display: none; }.fleetQueuePanel .fleetQueueRow { grid-template-columns: 48px minmax(0, 1fr) auto; padding: 13px 15px; }.fleetAuthorizationPanel { padding: 18px; }.fleetRegisterHeading > span { display: none; }.fleetRegisterPanel .fleetTruckRow { padding: 14px; } }
 
 /* Live queue workspace */
-.queueCommandHeader { align-items: flex-end; display: flex; gap: 18px; justify-content: space-between; margin-bottom: 20px; }.queueCommandHeader h1 { font-size: 28px; line-height: 1.12; margin: 0; }.queueCommandHeader > div > p:last-child { color: var(--muted); font-size: 12px; margin: 7px 0 0; max-width: 650px; }.queueLiveIndicator { align-items: center; background: #edf5eb; border: 1px solid #ceddca; border-radius: 7px; color: #4b8647; display: flex; flex: 0 0 auto; font-size: 10px; font-weight: 800; gap: 9px; padding: 12px 13px; text-transform: uppercase; white-space: nowrap; }.queueLiveIndicator i, .queueRegisterHeading > span i { background: #73aa58; border-radius: 50%; box-shadow: 0 0 0 4px #e7f2e3; height: 7px; width: 7px; }
+.queueLiveIndicator { align-items: center; background: #edf5eb; border: 1px solid #ceddca; border-radius: 7px; color: #4b8647; display: flex; flex: 0 0 auto; font-size: 10px; font-weight: 800; gap: 9px; padding: 12px 13px; text-transform: uppercase; white-space: nowrap; }.queueLiveIndicator i, .queueRegisterHeading > span i { background: #73aa58; border-radius: 50%; box-shadow: 0 0 0 4px #e7f2e3; height: 7px; width: 7px; }
 .queueStatusStrip { align-items: stretch; background: #fff; border: 1px solid #d6ded5; border-radius: 7px; display: flex; gap: 0; margin-bottom: 18px; min-height: 74px; overflow: hidden; }.queueStatusStrip > div { align-items: center; display: grid; flex: 1; gap: 2px 9px; grid-template-columns: 25px minmax(0, 1fr); padding: 11px 16px; }.queueStatusStrip > div svg { color: #6b9a61; grid-row: 1 / span 3; }.queueStatusStrip > div span, .queueStatusStrip > div strong, .queueStatusStrip > div small { display: block; }.queueStatusStrip > div span { color: #748177; font-size: 9px; font-weight: 800; text-transform: uppercase; }.queueStatusStrip > div strong { color: #2f3e34; font-size: 18px; line-height: 1.05; }.queueStatusStrip > div small { color: #7f8d82; font-size: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.queueStatusStrip > i { align-self: center; background: #dce3dc; height: 32px; width: 1px; }
 .queueRegisterPanel { border-color: #d5ded4; }.queueRegisterHeading { align-items: flex-start; border-bottom: 1px solid #dbe2da; display: flex; gap: 16px; justify-content: space-between; min-height: 112px; padding: 19px 20px; }.queueRegisterHeading > div > span { color: #56815b; font-size: 9px; font-weight: 800; text-transform: uppercase; }.queueRegisterHeading h2 { font-size: 18px; margin: 7px 0 5px; }.queueRegisterHeading p { color: var(--muted); font-size: 10px; line-height: 1.45; margin: 0; }.queueRegisterHeading > span { align-items: center; color: #54805b; display: flex; flex: 0 0 auto; font-size: 9px; font-weight: 800; gap: 7px; text-transform: uppercase; white-space: nowrap; }.queueToolbar { background: #f8faf7; border-bottom: 1px solid #dfe6de; margin: 0; padding: 12px 20px; }.queueToolbar .orderLock { align-items: center; color: #56705b; display: flex; font-size: 10px; font-weight: 800; gap: 6px; }.queueToolbar .orderLock svg { color: #669d61; }.queueRegisterPanel .dataTable th { background: #f3f7f1; color: #738077; padding: 10px 14px; }.queueRegisterPanel .dataTable td { border-color: #e2e8e1; padding: 14px; }.queueRegisterPanel .dataTable tbody tr:hover { background: #f7faf6; }.queueRegisterPanel .dataTable tbody tr.nextRow { background: #eff7e8; box-shadow: inset 4px 0 0 #77aa56; }.queueRegisterPanel .dataTable tbody tr.nextRow:hover { background: #eaf5e3; }.queueRegisterPanel .positionCell { color: #344b38; font-size: 16px; }.queueRegisterPanel .dataTable td:first-child small { color: #4f844a; font-size: 8px; font-weight: 800; margin-left: 5px; text-transform: uppercase; }.queueRegisterPanel .dataTable td:nth-child(2) strong { color: #3e703d; }.queueRegisterPanel .waitCell { color: #4f664f; font-size: 11px; font-weight: 700; }.queueRegisterPanel .queueTable { min-width: 850px; }
 
-@media (max-width: 700px) { .queueCommandHeader { align-items: flex-start; flex-direction: column; }.queueCommandHeader h1 { font-size: 25px; }.queueStatusStrip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }.queueStatusStrip > i { display: none; }.queueStatusStrip > div:nth-of-type(n + 3) { border-top: 1px solid #e1e7df; }.queueRegisterHeading { min-height: 0; padding: 17px 15px; }.queueRegisterHeading > span { display: none; }.queueToolbar { align-items: stretch; padding: 12px 15px; }.queueToolbar .orderLock { margin-left: 0; } }
+@media (max-width: 700px) {.queueStatusStrip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }.queueStatusStrip > i { display: none; }.queueStatusStrip > div:nth-of-type(n + 3) { border-top: 1px solid #e1e7df; }.queueRegisterHeading { min-height: 0; padding: 17px 15px; }.queueRegisterHeading > span { display: none; }.queueToolbar { align-items: stretch; padding: 12px 15px; }.queueToolbar .orderLock { margin-left: 0; } }
 
 /* Operations overview */
-.overviewCommandHeader { align-items: flex-end; display: flex; gap: 18px; justify-content: space-between; margin-bottom: 20px; }.overviewCommandHeader h1 { font-size: 28px; line-height: 1.12; margin: 0; }.overviewCommandHeader > div > p:last-child { color: var(--muted); font-size: 12px; margin: 7px 0 0; max-width: 650px; }
+
 .overviewPulse { align-items: center; background: #293f30; border-radius: 8px; color: #f5f9f3; display: grid; gap: 22px; grid-template-columns: minmax(260px, 1fr) minmax(230px, .7fr) auto; margin-bottom: 18px; padding: 19px 20px; }.overviewPulse > div:first-child > span { color: #bcdaa6; font-size: 9px; font-weight: 800; text-transform: uppercase; }.overviewPulse h2 { font-size: 18px; line-height: 1.2; margin: 7px 0 5px; }.overviewPulse p { color: #c9d5ca; font-size: 10px; line-height: 1.5; margin: 0; }.overviewPulseStats { align-items: center; border-left: 1px solid #506555; border-right: 1px solid #506555; display: flex; gap: 18px; padding: 6px 20px; }.overviewPulseStats span { color: #c9d5ca; font-size: 10px; line-height: 1.4; }.overviewPulseStats b { color: #eaf6df; display: block; font-size: 16px; }.overviewPulseAction { align-items: center; background: #cbe9ae; border-radius: 6px; color: #29402e; display: flex; font-size: 10px; font-weight: 800; justify-content: center; min-height: 40px; padding: 10px 12px; text-decoration: none; white-space: nowrap; }.overviewPulseAction:hover { background: #d8f2be; }
 .overviewStatusGrid { background: #fff; border: 1px solid #d6ded5; border-radius: 7px; gap: 0; margin-bottom: 18px; overflow: hidden; }.overviewStatusGrid > div { background: transparent; border: 0; border-bottom: 1px solid #e1e7df; border-radius: 0; box-shadow: none; min-height: 98px; padding: 14px 16px; }.overviewStatusGrid > div:nth-child(3n + 1), .overviewStatusGrid > div:nth-child(3n + 2) { border-right: 1px solid #e1e7df; }.overviewStatusGrid > div:nth-last-child(-n + 3) { border-bottom: 0; }.overviewStatusGrid > div svg { background: #e8f2e4; border-radius: 5px; color: #5f9558; padding: 5px; }.overviewStatusGrid > div.criticalMetric svg { background: #f7e5df; color: #b75b45; }.overviewStatusGrid > div span { color: #748177; }.overviewStatusGrid > div strong { color: #2f3e34; font-size: 21px; }.overviewStatusGrid > div small { color: #7b897f; }
 .overviewGrid { align-items: stretch; gap: 18px; grid-template-columns: minmax(0, 1.1fr) minmax(270px, .9fr); max-width: none; }.overviewPanel { border-color: #d5ded4; }.overviewPanelHeading { align-items: flex-start; border-bottom: 1px solid #dbe2da; display: flex; gap: 15px; justify-content: space-between; min-height: 110px; padding: 19px 20px; }.overviewPanelHeading > div > span { color: #56815b; font-size: 9px; font-weight: 800; text-transform: uppercase; }.overviewPanelHeading h2 { font-size: 18px; margin: 7px 0 5px; }.overviewPanelHeading p { color: var(--muted); font-size: 10px; line-height: 1.45; margin: 0; }.overviewPanelHeading .textButton { color: #477d43; font-size: 10px; font-weight: 800; }.overviewQueuePanel .overviewQueue > div { border-color: #e2e8e1; min-height: 64px; padding: 12px 20px; }.overviewQueuePanel .overviewQueue > div:first-child { background: #eff7e8; box-shadow: inset 4px 0 0 #77aa56; }.overviewQueuePanel .overviewQueue strong { color: #344b38; font-size: 16px; }.overviewQueuePanel .overviewQueue b { color: #3d713c; }.overviewQueuePanel .overviewQueue em { color: #748176; font-size: 10px; }.overviewExceptionsPanel { background: #fbfcfa; }.overviewExceptionsPanel .overviewEvents > div { border-color: #e2e8e1; min-height: 64px; padding: 13px 18px; }.overviewExceptionsPanel .overviewEvents > div > svg { background: #f8e9dc; border-radius: 5px; color: #b36f2b; padding: 5px; }.overviewExceptionsPanel .overviewEvents b { color: #404f44; }.overviewInsurancePanel .overviewInsurance { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }.overviewInsurancePanel .overviewInsurance > div { border-bottom: 0; border-right: 1px solid #e2e8e1; display: flex; flex-direction: column; gap: 9px; min-height: 93px; padding: 15px 18px; }.overviewInsurancePanel .overviewInsurance > div:last-child { border-right: 0; }.overviewInsurancePanel .overviewInsurance b { color: #3d4d42; }.overviewInsurancePanel .overviewInsurance small { color: #78867d; }.overviewInsurancePanel .statusBadge { align-self: flex-start; }
 
 @media (max-width: 1040px) { .overviewPulse { grid-template-columns: minmax(0, 1fr) auto; }.overviewPulseStats { border-right: 0; }.overviewPulseAction { grid-column: 1 / -1; width: 100%; }.overviewInsurancePanel .overviewInsurance { grid-template-columns: repeat(2, minmax(0, 1fr)); }.overviewInsurancePanel .overviewInsurance > div:nth-child(2n) { border-right: 0; }.overviewInsurancePanel .overviewInsurance > div:nth-child(n + 3) { border-top: 1px solid #e2e8e1; } }
-@media (max-width: 700px) { .overviewCommandHeader { align-items: flex-start; flex-direction: column; }.overviewCommandHeader h1 { font-size: 25px; }.overviewPulse { display: grid; grid-template-columns: 1fr; padding: 18px; }.overviewPulseStats { border-left: 0; border-right: 0; justify-content: space-between; padding: 12px 0; }.overviewStatusGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.overviewStatusGrid > div:nth-child(3n + 1), .overviewStatusGrid > div:nth-child(3n + 2) { border-right: 0; }.overviewStatusGrid > div:nth-child(odd) { border-right: 1px solid #e1e7df; }.overviewStatusGrid > div:nth-last-child(-n + 3) { border-bottom: 1px solid #e1e7df; }.overviewStatusGrid > div:nth-last-child(-n + 2) { border-bottom: 0; }.overviewPanelHeading { min-height: 0; padding: 17px 15px; }.overviewInsurancePanel .overviewInsurance > div { padding: 14px; }.overviewGrid { grid-template-columns: 1fr; } }
+@media (max-width: 700px) {.overviewPulse { display: grid; grid-template-columns: 1fr; padding: 18px; }.overviewPulseStats { border-left: 0; border-right: 0; justify-content: space-between; padding: 12px 0; }.overviewStatusGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.overviewStatusGrid > div:nth-child(3n + 1), .overviewStatusGrid > div:nth-child(3n + 2) { border-right: 0; }.overviewStatusGrid > div:nth-child(odd) { border-right: 1px solid #e1e7df; }.overviewStatusGrid > div:nth-last-child(-n + 3) { border-bottom: 1px solid #e1e7df; }.overviewStatusGrid > div:nth-last-child(-n + 2) { border-bottom: 0; }.overviewPanelHeading { min-height: 0; padding: 17px 15px; }.overviewInsurancePanel .overviewInsurance > div { padding: 14px; }.overviewGrid { grid-template-columns: 1fr; } }
 
 /* Truck registry and insurance control */
-.trucksCommandHeader, .insuranceCommandHeader { align-items: flex-end; display: flex; gap: 18px; justify-content: space-between; margin-bottom: 20px; }.trucksCommandHeader h1, .insuranceCommandHeader h1 { font-size: 28px; line-height: 1.12; margin: 0; }.trucksCommandHeader > div:first-child > p:last-child, .insuranceCommandHeader > div:first-child > p:last-child { color: var(--muted); font-size: 12px; margin: 7px 0 0; max-width: 650px; }.trucksCommandHeader .headerActions { margin: 0; }
+.pageCommandHeader .headerActions { margin: 0; }
 .truckStatusStrip, .insuranceStatusStrip { align-items: stretch; background: #fff; border: 1px solid #d6ded5; border-radius: 7px; display: flex; gap: 0; margin: 0 0 18px; min-height: 74px; overflow: hidden; padding: 0; }.truckStatusStrip > div, .insuranceStatusStrip > div { align-items: center; display: grid; flex: 1; gap: 2px 9px; grid-template-columns: 25px minmax(0, 1fr); padding: 12px 16px; }.truckStatusStrip > div svg, .insuranceStatusStrip > div svg { color: #6b9a61; grid-row: 1 / span 2; }.truckStatusStrip > div span, .truckStatusStrip > div strong, .insuranceStatusStrip > div span, .insuranceStatusStrip > div strong { display: block; }.truckStatusStrip > div span, .insuranceStatusStrip > div span { color: #748177; font-size: 9px; font-weight: 800; text-transform: uppercase; }.truckStatusStrip > div strong, .insuranceStatusStrip > div strong { color: #2f3e34; font-size: 19px; line-height: 1; }.truckStatusStrip > i { align-self: center; background: #dce3dc; height: 30px; width: 1px; }.insuranceStatusStrip { gap: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); }.insuranceStatusStrip > div { border-right: 1px solid #dce3dc; }.insuranceStatusStrip > div:last-child { border-right: 0; }.insuranceStatusStrip .criticalMetric svg, .insuranceStatusStrip .criticalMetric strong { color: #b65743; }
 .truckRegisterPanel, .insuranceRegisterPanel { border-color: #d5ded4; }.truckRegisterHeading, .insuranceRegisterHeading { align-items: flex-start; border-bottom: 1px solid #dbe2da; display: flex; gap: 16px; justify-content: space-between; min-height: 112px; padding: 19px 20px; }.truckRegisterHeading > div > span, .insuranceRegisterHeading > div > span { color: #56815b; font-size: 9px; font-weight: 800; text-transform: uppercase; }.truckRegisterHeading h2, .insuranceRegisterHeading h2 { font-size: 18px; margin: 7px 0 5px; }.truckRegisterHeading p, .insuranceRegisterHeading p { color: var(--muted); font-size: 10px; line-height: 1.45; margin: 0; }.truckRegisterHeading > span, .insuranceRegisterHeading > span { background: #eef5eb; border: 1px solid #d1e1cd; border-radius: 999px; color: #4d804d; font-size: 9px; font-weight: 800; padding: 6px 8px; text-transform: uppercase; white-space: nowrap; }.truckToolbar { background: #f8faf7; border-bottom: 1px solid #dfe6de; margin: 0; padding: 12px 20px; }.truckRegisterPanel .dataTable th, .insuranceRegisterPanel .dataTable th { background: #f3f7f1; color: #738077; padding: 10px 14px; }.truckRegisterPanel .dataTable td, .insuranceRegisterPanel .dataTable td { border-color: #e2e8e1; padding: 14px; }.truckRegisterPanel .dataTable tbody tr:hover, .insuranceRegisterPanel .dataTable tbody tr:hover { background: #f7faf6; }.truckRegisterPanel .dataTable td:first-child strong, .insuranceRegisterPanel .dataTable td:first-child strong { color: #3e703d; }.truckRegisterPanel .dataTable td:first-child span { color: #7c887f; font-size: 9px; }.truckRegisterPanel .dataTable td:nth-child(5) > span:last-child { color: #7b887f; display: block; font-size: 9px; margin-top: 5px; }.truckRegisterPanel .iconButton { color: #477d43; }.insuranceHeaderCount { align-items: center; background: #edf5eb; border: 1px solid #ceddca; border-radius: 7px; color: #4b8647; display: flex; flex: 0 0 auto; gap: 10px; min-width: 174px; padding: 10px 12px; }.insuranceHeaderCount svg { color: #70a563; }.insuranceHeaderCount span, .insuranceHeaderCount strong { display: block; }.insuranceHeaderCount span { color: #638468; font-size: 9px; font-weight: 800; text-transform: uppercase; }.insuranceHeaderCount strong { color: #2e4e34; font-size: 14px; margin-top: 3px; }.insuranceRegisterPanel .dataTable td:nth-child(4) { color: #4c5d50; font-weight: 700; }
 
-@media (max-width: 700px) { .trucksCommandHeader, .insuranceCommandHeader { align-items: flex-start; flex-direction: column; }.trucksCommandHeader h1, .insuranceCommandHeader h1 { font-size: 25px; }.trucksCommandHeader .headerActions { align-items: stretch; width: 100%; }.trucksCommandHeader .headerActions .commandButton { justify-content: center; width: 100%; }.truckStatusStrip, .insuranceStatusStrip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }.truckStatusStrip > i { display: none; }.truckStatusStrip > div:nth-of-type(n + 3), .insuranceStatusStrip > div:nth-child(n + 3) { border-top: 1px solid #e1e7df; }.insuranceStatusStrip > div:nth-child(odd) { border-right: 1px solid #dce3dc; }.insuranceStatusStrip > div:nth-child(even) { border-right: 0; }.truckRegisterHeading, .insuranceRegisterHeading { min-height: 0; padding: 17px 15px; }.truckRegisterHeading > span, .insuranceRegisterHeading > span { display: none; }.truckToolbar { align-items: stretch; padding: 12px 15px; } }
+@media (max-width: 700px) {.pageCommandHeader .headerActions { align-items: stretch; width: 100%; }.pageCommandHeader .headerActions .commandButton { justify-content: center; width: 100%; }.truckStatusStrip, .insuranceStatusStrip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }.truckStatusStrip > i { display: none; }.truckStatusStrip > div:nth-of-type(n + 3), .insuranceStatusStrip > div:nth-child(n + 3) { border-top: 1px solid #e1e7df; }.insuranceStatusStrip > div:nth-child(odd) { border-right: 1px solid #dce3dc; }.insuranceStatusStrip > div:nth-child(even) { border-right: 0; }.truckRegisterHeading, .insuranceRegisterHeading { min-height: 0; padding: 17px 15px; }.truckRegisterHeading > span, .insuranceRegisterHeading > span { display: none; }.truckToolbar { align-items: stretch; padding: 12px 15px; } }
 
 /* Bypass decision and audit trail */
-.bypassCommandHeader, .auditCommandHeader { align-items: flex-end; display: flex; gap: 18px; justify-content: space-between; margin-bottom: 20px; }.bypassCommandHeader h1, .auditCommandHeader h1 { font-size: 28px; line-height: 1.12; margin: 0; }.bypassCommandHeader > div > p:last-child, .auditCommandHeader > div > p:last-child { color: var(--muted); font-size: 12px; margin: 7px 0 0; max-width: 650px; }.bypassPendingCount { align-items: center; background: #fff1d8; border: 1px solid #efd6a5; border-radius: 7px; color: #a4671d; display: flex; flex: 0 0 auto; gap: 9px; padding: 10px 12px; white-space: nowrap; }.bypassPendingCount > span { font-size: 10px; font-weight: 800; text-transform: uppercase; }.bypassPendingCount b { font-size: 14px; margin-right: 4px; }
+.pageCommandHeader { align-items: flex-end; display: flex; gap: 18px; justify-content: space-between; margin-bottom: 20px; }
+.pageCommandHeader > div > p:last-child,
+.pageCommandHeader > div:first-child > p:last-child { color: var(--muted); font-size: 12px; margin: 7px 0 0; max-width: 650px; }
+.pageCommandHeader h1 { font-size: 28px; line-height: 1.12; margin: 0; }.pageCommandHeader > div > p:last-child { color: var(--muted); font-size: 12px; margin: 7px 0 0; max-width: 650px; }.bypassPendingCount { align-items: center; background: #fff1d8; border: 1px solid #efd6a5; border-radius: 7px; color: #a4671d; display: flex; flex: 0 0 auto; gap: 9px; padding: 10px 12px; white-space: nowrap; }.bypassPendingCount > span { font-size: 10px; font-weight: 800; text-transform: uppercase; }.bypassPendingCount b { font-size: 14px; margin-right: 4px; }
 .bypassGuardrail { align-items: center; background: #293f30; border-radius: 8px; color: #f5f9f3; display: flex; gap: 20px; justify-content: space-between; margin-bottom: 18px; padding: 17px 20px; }.bypassGuardrail > div { align-items: center; display: flex; gap: 11px; }.bypassGuardrail > div:first-child > svg { color: #cbe9ae; flex: 0 0 auto; }.bypassGuardrail span, .bypassGuardrail strong { display: block; }.bypassGuardrail > div:first-child span { color: #bcdaa6; font-size: 9px; font-weight: 800; text-transform: uppercase; }.bypassGuardrail > div:first-child strong { color: #eef5ec; font-size: 11px; line-height: 1.45; margin-top: 4px; max-width: 700px; }.bypassGuardrail > div:last-child { border-left: 1px solid #516654; color: #cce0c9; font-size: 10px; font-weight: 800; padding-left: 18px; white-space: nowrap; }.bypassGuardrail > div:last-child svg { color: #cbe9ae; }
 .bypassWorkbench { gap: 18px; grid-template-columns: minmax(300px, .72fr) minmax(460px, 1.28fr); max-width: none; }.bypassRequestList, .bypassDetailPanel { border: 1px solid #d5ded4; border-radius: 8px; box-shadow: none; overflow: hidden; }.bypassListHeading { background: #fbfcfa; border-bottom-color: #dbe2da; padding: 19px 18px; }.bypassListHeading span { color: #56815b; display: block; font-size: 9px; font-weight: 800; text-transform: uppercase; }.bypassListHeading h2 { font-size: 17px; margin-top: 7px; }.bypassListHeading p { line-height: 1.45; }.bypassRequestList .requestRow { border-bottom-color: #e2e8e1; min-height: 77px; padding: 14px 16px; }.bypassRequestList .requestRow:hover, .bypassRequestList .requestRow.selected { background: #f3f8ef; }.bypassRequestList .requestRow.selected { box-shadow: inset 4px 0 0 #77aa56; }.bypassRequestList .requestTruck { color: #3d713c; font-size: 13px; }.bypassRequestList .rowStatus { background: #fff1d8; color: #a4671d; }.bypassDetailPanel { background: #fff; padding: 20px; }.bypassDetailPanel .detailHeader { border-bottom: 1px solid #dbe2da; padding-bottom: 18px; }.bypassDetailPanel .detailHeader h2 { color: #2f4135; font-size: 24px; }.bypassDetailPanel .statusPill { background: #fff1d8; color: #a4671d; }.bypassDetailPanel .detailGrid { gap: 18px; margin-top: 20px; }.bypassDetailPanel .detailGrid > div { background: #f7faf6; border: 1px solid #e0e8df; border-radius: 6px; padding: 13px; }.bypassDetailPanel .detailGrid dd.position { color: #3d713c; }.bypassDetailPanel .explanation { border-color: #dbe2da; }.bypassDetailPanel .rejectField textarea { border-color: #d5ded4; }.bypassDetailPanel .detailActions { border-top: 1px solid #dbe2da; margin: 19px -20px -20px; padding: 14px 20px; }.bypassDetailPanel .primaryButton { background: #2e7949; border-color: #2e7949; }
 .auditStatusStrip { align-items: stretch; background: #fff; border: 1px solid #d6ded5; border-radius: 7px; display: flex; gap: 0; margin: 0 0 18px; min-height: 74px; overflow: hidden; }.auditStatusStrip > div { align-items: center; display: grid; flex: 1; gap: 2px 9px; grid-template-columns: 25px minmax(0, 1fr); padding: 12px 16px; }.auditStatusStrip > div svg { color: #6b9a61; grid-row: 1 / span 2; }.auditStatusStrip > div span, .auditStatusStrip > div strong { display: block; }.auditStatusStrip > div span { color: #748177; font-size: 9px; font-weight: 800; text-transform: uppercase; }.auditStatusStrip > div strong { color: #2f3e34; font-size: 17px; line-height: 1.1; }.auditStatusStrip > i { align-self: center; background: #dce3dc; height: 30px; width: 1px; }.auditRegisterPanel { border-color: #d5ded4; }.auditRegisterHeading { align-items: flex-start; border-bottom: 1px solid #dbe2da; display: flex; gap: 16px; justify-content: space-between; min-height: 112px; padding: 19px 20px; }.auditRegisterHeading > div > span { color: #56815b; font-size: 9px; font-weight: 800; text-transform: uppercase; }.auditRegisterHeading h2 { font-size: 18px; margin: 7px 0 5px; }.auditRegisterHeading p { color: var(--muted); font-size: 10px; line-height: 1.45; margin: 0; }.auditRegisterHeading > span { background: #eef5eb; border: 1px solid #d1e1cd; border-radius: 999px; color: #4d804d; font-size: 9px; font-weight: 800; padding: 6px 8px; text-transform: uppercase; white-space: nowrap; }.auditToolbar { background: #f8faf7; border-bottom: 1px solid #dfe6de; margin: 0; padding: 12px 20px; }.auditRegisterPanel .dataTable th { background: #f3f7f1; color: #738077; padding: 10px 14px; }.auditRegisterPanel .dataTable td { border-color: #e2e8e1; padding: 14px; }.auditRegisterPanel .dataTable tbody tr:hover { background: #f7faf6; }.auditRegisterPanel .dataTable td:nth-child(2) strong { color: #3e703d; }.auditRegisterPanel .dataTable td:nth-child(1), .auditRegisterPanel .dataTable td:nth-child(3) { color: #596a5d; font-size: 11px; }.auditRegisterPanel .auditTable { min-width: 800px; }
 
 @media (max-width: 980px) { .bypassWorkbench { grid-template-columns: 1fr; }.bypassDetailPanel { min-height: 0; }.bypassGuardrail { align-items: flex-start; flex-direction: column; }.bypassGuardrail > div:last-child { border-left: 0; border-top: 1px solid #516654; padding: 12px 0 0; } }
-@media (max-width: 700px) { .bypassCommandHeader, .auditCommandHeader { align-items: flex-start; flex-direction: column; }.bypassCommandHeader h1, .auditCommandHeader h1 { font-size: 25px; }.bypassPendingCount { align-self: flex-start; }.bypassGuardrail { padding: 18px; }.bypassGuardrail > div:first-child { align-items: flex-start; }.bypassGuardrail > div:last-child { white-space: normal; }.bypassDetailPanel { padding: 16px; }.bypassDetailPanel .detailGrid { grid-template-columns: 1fr; }.bypassDetailPanel .detailActions { margin: 19px -16px -16px; padding: 14px 16px; }.auditStatusStrip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }.auditStatusStrip > i { display: none; }.auditStatusStrip > div:nth-of-type(n + 3) { border-top: 1px solid #e1e7df; }.auditRegisterHeading { min-height: 0; padding: 17px 15px; }.auditRegisterHeading > span { display: none; }.auditToolbar { align-items: stretch; padding: 12px 15px; } }
+@media (max-width: 700px) { .pageCommandHeader { align-items: flex-start; flex-direction: column; }.pageCommandHeader h1 { font-size: 25px; }.bypassPendingCount { align-self: flex-start; }.bypassGuardrail { padding: 18px; }.bypassGuardrail > div:first-child { align-items: flex-start; }.bypassGuardrail > div:last-child { white-space: normal; }.bypassDetailPanel { padding: 16px; }.bypassDetailPanel .detailGrid { grid-template-columns: 1fr; }.bypassDetailPanel .detailActions { margin: 19px -16px -16px; padding: 14px 16px; }.auditStatusStrip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }.auditStatusStrip > i { display: none; }.auditStatusStrip > div:nth-of-type(n + 3) { border-top: 1px solid #e1e7df; }.auditRegisterHeading { min-height: 0; padding: 17px 15px; }.auditRegisterHeading > span { display: none; }.auditToolbar { align-items: stretch; padding: 12px 15px; } }
 
 /* Navigation rail */
 .shell { grid-template-columns: 226px minmax(0, 1fr); }.sidebar { background: #161d19; border-right: 1px solid #26332b; padding: 22px 12px 16px; }.brandBlock { align-items: center; display: flex; gap: 9px; padding: 3px 9px 0; }.sidebarBrandMark { align-items: center; background: transparent; border: 1px solid #3d5145; border-radius: 5px; color: #bfe58e; display: flex; flex: 0 0 auto; height: 27px; justify-content: center; width: 27px; }.brandBlock > div { min-width: 0; }.brand { color: #edf2ed; font-size: 12px; letter-spacing: 0; }.brandBlock > div > span { color: #84958a; font-size: 9px; margin-top: 3px; }.sidebar nav { gap: 1px; margin-top: 32px; }.navigationLabel { color: #6f8175; font-size: 9px; font-weight: 800; letter-spacing: 0; margin: 0 0 9px; padding: 0 10px; text-transform: uppercase; }.sidebar nav a { border: 0; border-radius: 4px; color: #aebbb1; font-size: 11px; font-weight: 600; min-height: 38px; padding: 9px 10px; position: relative; }.sidebar nav a svg { color: #71857a; }.sidebar nav a:hover { background: #202a24; color: #eff4ef; }.sidebar nav a:hover svg { color: #bdd995; }.sidebar nav a.active { background: transparent; color: #f2f7f0; font-weight: 750; }.sidebar nav a.active::before { background: #b8df82; border-radius: 2px; content: ""; height: 17px; left: -12px; position: absolute; top: calc(50% - 8px); width: 2px; }.sidebar nav a.active svg { color: #c5e99a; }.environmentState { background: transparent; border: 0; border-radius: 0; border-top: 1px solid #2b3930; margin-top: auto; padding: 14px 9px 0; }.environmentState strong { color: #d9e3da; font-size: 10px; }.environmentState small { color: #7f9084; font-size: 9px; }.environmentState > span { box-shadow: none; height: 6px; width: 6px; }.demoDot { background: #d9a948; }.liveDot { background: #9fd472; }
@@ -888,3 +887,227 @@ a.accessSubmit { text-decoration: none; }
 .bypassHistoryRow { grid-template-columns: minmax(150px, 1fr) minmax(104px, max-content) minmax(180px, 1.4fr); }
 .bypassOutcome span { color: var(--muted); display: block; font-size: 10px; }
 .bypassOutcome b { display: block; font-size: 11px; line-height: 1.45; margin-top: 3px; }
+
+/* Status groups in registers — see /DESIGN.md section 2. */
+.dataTable .groupRow th > span:first-child { margin-right: 8px; }
+.groupCount { background: #e3ebe1; border-radius: 999px; color: #46614f; font-size: 10px; font-weight: 700; padding: 2px 7px; }
+
+/* ------------------------------------------------------------------
+   One table system — see /DESIGN.md section 1. Column widths are shared
+   by meaning, figures align right on tabular numerals, and the header
+   stays put while a long register scrolls.
+   ------------------------------------------------------------------ */
+/* Auto layout so a long name can claim space; the col widths below are
+   hints, and a narrow panel scrolls sideways instead of crushing a column. */
+.dataTable { border-collapse: separate; border-spacing: 0; min-width: 680px; table-layout: auto; width: 100%; }
+.tableScroll { overflow-x: auto; }
+
+.dataTable thead th {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  color: #6a7a6d;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .07em;
+  padding: 11px 14px;
+  position: sticky;
+  text-align: left;
+  text-transform: uppercase;
+  top: 0;
+  z-index: 2;
+  scroll-margin-top: 0;
+  white-space: nowrap;
+}
+
+.dataTable tbody td {
+  border-bottom: 1px solid #eef2ed;
+  font-size: 12.5px;
+  height: 52px;
+  padding: 10px 14px;
+  vertical-align: middle;
+}
+.dataTable tbody tr:last-child td { border-bottom: 0; }
+.dataTable tbody tr:hover td { background: #f8faf7; }
+
+/* The row's subject reads first; everything under it is secondary. */
+.dataTable tbody td:first-child strong { display: block; font-size: 13px; font-weight: 700; letter-spacing: -0.005em; }
+.dataTable tbody td:first-child span { color: var(--muted); display: block; font-size: 10.5px; margin-top: 3px; }
+
+/* Edges line up with the panel, not with the cell padding. */
+.dataTable th:first-child,
+.dataTable td:first-child { padding-left: 20px; }
+.dataTable th:last-child,
+.dataTable td:last-child { padding-right: 20px; }
+
+/* Figures: right aligned, tabular, never wrapped. */
+.dataTable [data-col="num"],
+.dataTable [data-col="when"] { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dataTable [data-col="num"] { text-align: right; }
+.dataTable [data-col="pos"] { font-variant-numeric: tabular-nums; text-align: left; white-space: nowrap; }
+.dataTable [data-col="actions"] { text-align: right; }
+.dataTable [data-col="status"] span { white-space: nowrap; }
+
+/* Shared widths by meaning, so a column means the same on every page. */
+.dataTable col.colSubject { width: 17%; min-width: 150px; }
+.dataTable col.colName { width: 14%; min-width: 120px; }
+.dataTable col.colOfficer { width: 13%; min-width: 110px; }
+.dataTable col.colWhen { width: 12%; min-width: 108px; }
+.dataTable col.colNum { width: 10%; min-width: 92px; }
+.dataTable col.colStatus { width: 13%; min-width: 118px; }
+.dataTable col.colActions { width: 56px; }
+.dataTable col.colWide { width: auto; }
+
+
+
+/* Group headers sit inside the same grid as the rows. */
+.dataTable .groupRow th { background: #f3f6f2; border-bottom: 1px solid var(--border); border-top: 1px solid var(--border); color: #4e6553; font-size: 10px; font-weight: 800; letter-spacing: .06em; padding: 7px 20px; text-align: left; text-transform: uppercase; }
+.dataTable .groupRow th > span:first-child { margin-right: 8px; }
+.groupCount { background: #e3ebe1; border-radius: 999px; color: #46614f; font-size: 10px; font-weight: 700; padding: 2px 7px; }
+
+
+/* Responsive: these page layouts put a table beside a side panel. The window
+   is wide, but the sidebar takes 232px of it, so the table is squeezed long
+   before the old breakpoints fired. Stack them while the content is still
+   readable. */
+@media (max-width: 1340px) {
+  .ordersWorkbench,
+  .programmingWorkbench,
+  .programmingLayout,
+  .bypassWorkbench,
+  .workspaceGrid,
+  .fleetWorkbench { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 1180px) {
+  .overviewGrid { grid-template-columns: minmax(0, 1fr); }
+  .content { padding: 24px 22px 40px; }
+}
+
+/* Narrower sidebar, but only while there still is one. */
+@media (min-width: 981px) and (max-width: 1180px) {
+  .shell { grid-template-columns: 208px minmax(0, 1fr); }
+}
+
+@media (max-width: 1024px) {
+  .truckStatusStrip,
+  .queueStatusStrip,
+  .fleetStatusStrip,
+  .ordersLiveStrip { flex-wrap: wrap; row-gap: 14px; }
+  .truckStatusStrip > i,
+  .queueStatusStrip > i,
+  .fleetStatusStrip > i { display: none; }
+  .overviewStatusGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.fleetGroupHeading { align-items: center; background: #f3f6f2; border-bottom: 1px solid var(--border); border-top: 1px solid var(--border); color: #4e6553; display: flex; font-size: 10px; font-weight: 800; gap: 8px; letter-spacing: .06em; padding: 7px 20px; text-transform: uppercase; }
+
+/* Work lists — see /DESIGN.md section 3. The focus card carries the next
+   action; acting on it promotes the row beneath, and the button stays put. */
+.workPanel { margin-bottom: 18px; overflow: hidden; }
+.workPanelHead { border-bottom: 1px solid var(--border); padding: 18px 20px 16px; }
+.workPanelHead > div > span:first-child { color: #56815b; font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.workPanelHead h2 { font-size: 17px; line-height: 1.25; margin: 7px 0 5px; }
+.workPanelHead p { color: var(--muted); font-size: 12px; line-height: 1.5; margin: 0; }
+
+.workList { display: flex; flex-direction: column; }
+.workFocus,
+.workRow { align-items: center; display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr) auto auto; }
+.workFocus { background: #f7faf6; border-bottom: 1px solid var(--border); padding: 18px 20px; }
+.workRow { border-bottom: 1px solid #eef2ed; padding: 12px 20px; }
+.workRow:last-of-type { border-bottom: 0; }
+.workFocus strong { display: block; font-size: 17px; letter-spacing: -0.01em; }
+.workRow strong { display: block; font-size: 13.5px; }
+.workFocus > div > span,
+.workRow > div > span { color: var(--muted); display: block; font-size: 11.5px; margin-top: 3px; }
+.workFailure { color: var(--critical) !important; font-weight: 600; }
+.workNote { align-items: center; display: flex; gap: 8px; white-space: nowrap; }
+.workListDone { background: var(--success-soft); border-bottom: 1px solid var(--border); color: #17683b; font-size: 12px; margin: 0; padding: 9px 20px; }
+.workListEmpty { color: var(--muted); font-size: 12.5px; margin: 0; padding: 18px 20px; }
+.workListCount { color: var(--muted); font-size: 11px; margin: 0; padding: 10px 20px; text-align: right; }
+
+@media (max-width: 760px) {
+  .workFocus,
+  .workRow { grid-template-columns: minmax(0, 1fr); }
+  .workFocus .primaryButton,
+  .workRow .secondaryButton { width: 100%; }
+}
+.workCustomer { color: var(--muted); font-size: 12px; }
+
+/* The assigned-truck register is a list, but it must read like a table:
+   every row shares one set of column positions. Sizing a column to its own
+   row's content (max-content) is what made these look ragged. */
+.fleetTruckRow { grid-template-columns: minmax(0, 1fr) 136px 172px 208px; gap: 16px; min-height: 68px; padding: 12px 20px; }
+.fleetTruckRow > .dataStatus { justify-self: start; }
+.fleetInsurance { display: grid; gap: 4px; }
+.fleetInsurance > span { color: var(--muted); font-size: 9.5px; font-weight: 700; letter-spacing: .04em; margin: 0; text-transform: uppercase; }
+.fleetInsurance b { display: inline-flex; font-size: 11.5px; font-variant-numeric: tabular-nums; margin: 0; }
+.fleetInsurance .dataStatus { justify-self: start; }
+.fleetRowActions { justify-content: flex-end; white-space: nowrap; }
+.bypassHistoryRow { grid-template-columns: minmax(0, 1fr) 136px 1fr; }
+
+/* Queue rows in the fleet view share one grid too. */
+.fleetQueueRow { grid-template-columns: 56px minmax(0, 1fr) 132px; }
+.fleetQueuePanel .fleetQueueRow > strong { font-variant-numeric: tabular-nums; }
+.fleetQueuePanel .fleetQueueRow > :nth-child(3) { justify-self: end; text-align: right; }
+
+@media (max-width: 900px) {
+  .fleetTruckRow { grid-template-columns: minmax(0, 1fr) 136px; row-gap: 10px; }
+  .fleetInsurance { grid-column: 1; }
+  .fleetRowActions { grid-column: 2; justify-content: flex-start; }
+}
+.queuePositionNote { color: var(--muted); font-size: 11px; }
+
+/* The sidebar only becomes a top bar on a phone. Between 760 and 980 it stays
+   a (narrower) vertical sidebar: turning it sideways at 980 clipped the
+   navigation on ordinary laptop and split-screen widths. */
+@media (min-width: 761px) and (max-width: 980px) {
+  .shell { grid-template-columns: 186px minmax(0, 1fr); }
+  .sidebar { min-height: 100vh; padding: 20px 10px 16px; }
+  .brandBlock { align-items: center; display: flex; gap: 9px; padding: 0 4px; }
+  .sidebar nav { display: grid; margin-top: 22px; overflow: visible; }
+  .sidebar nav a,
+  .disabledNav { display: grid; font-size: 11.5px; grid-template-columns: 17px minmax(0, 1fr) auto; min-height: 38px; padding: 8px 9px; }
+  .environmentState { display: flex; }
+  .content { padding: 24px 20px 40px; }
+}
+
+/* On a phone the bar wraps onto as many lines as it needs. Nothing is cut off. */
+@media (max-width: 760px) {
+  .sidebar nav { flex-wrap: wrap; overflow-x: visible; row-gap: 6px; }
+  .sidebar nav a,
+  .disabledNav { min-height: 40px; }
+  .accountState { display: flex; padding-top: 12px; }
+}
+
+/* A later unconditional rule was re-setting the sidebar width, so the phone
+   layout never actually applied. This restores it, last word. */
+@media (max-width: 760px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .sidebar { border-bottom: 1px solid #26332b; border-right: 0; min-height: auto; padding: 14px 16px; }
+  .sidebar nav { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+  .sidebar nav a,
+  .disabledNav { flex: 0 0 auto; grid-template-columns: 17px auto; min-height: 40px; padding: 8px 12px; }
+  .navigationLabel { margin: 4px 0 0; }
+  .environmentState { display: none; }
+  .content { padding: 18px 16px 34px; }
+  .headerActions { flex-wrap: wrap; }
+  .tableScroll { margin: 0 -2px; }
+}
+
+/* Sidebar foot: who is signed in, then a real sign-out control that looks
+   like it belongs, rather than an unlabelled icon squeezed beside the email. */
+.accountState { align-items: stretch; border-top: 1px solid #2b3930; display: grid; gap: 10px; margin-top: auto; padding: 14px 6px 0; }
+.accountIdentity { align-items: center; display: grid; gap: 9px; grid-template-columns: 28px minmax(0, 1fr); }
+.accountAvatar { align-items: center; background: #2b3930; border-radius: 50%; color: #d8efbb; display: flex; font-size: 11px; font-weight: 800; height: 28px; justify-content: center; width: 28px; }
+.accountIdentity strong { color: #dce5dd; display: block; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.accountIdentity small { color: #78907e; display: block; font-size: 10px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.signOutButton { align-items: center; background: transparent; border: 1px solid #33473a; border-radius: 8px; color: #a7bbab; cursor: pointer; display: flex; font-size: 11.5px; font-weight: 600; gap: 8px; justify-content: center; min-height: 36px; padding: 8px 10px; transition: background .12s ease, color .12s ease, border-color .12s ease; width: 100%; }
+.signOutButton:hover { background: #26332b; border-color: #47604e; color: #eaf5e3; }
+
+/* A quieter brand mark: three bars, longest first, the queue itself. */
+.sidebarBrandMark { align-items: center; background: #26332b; border: 0; border-radius: 8px; color: #bfe58e; display: flex; height: 30px; justify-content: center; width: 30px; }
+
+/* On a phone the same block sits inline in the bar, still labelled. */
+@media (max-width: 760px) {
+  .accountState { align-items: center; border-top: 1px solid #26332b; grid-template-columns: minmax(0, 1fr) auto; margin-top: 12px; padding: 12px 0 0; }
+  .signOutButton { padding: 8px 14px; width: auto; }
+}

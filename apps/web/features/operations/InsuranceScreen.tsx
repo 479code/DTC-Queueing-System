@@ -54,7 +54,7 @@ export function InsuranceScreen({ siteId, trucks, demoMode, onTrucksChange }: Pr
 
   return (
     <>
-      <header className="insuranceCommandHeader"><div><p className="eyebrow">Fleet eligibility</p><h1>Insurance control</h1><p>Keep insurance records current so only eligible trucks can enter or remain in the FIFO queue.</p></div><div className="insuranceHeaderCount"><ShieldCheck size={18} /><div><span>Requires attention</span><strong>{attention.length} trucks</strong></div></div></header>
+      <header className="pageCommandHeader"><div><p className="eyebrow">Fleet eligibility</p><h1>Insurance control</h1><p>Keep insurance records current so only eligible trucks can enter or remain in the FIFO queue.</p></div><div className="insuranceHeaderCount"><ShieldCheck size={18} /><div><span>Requires attention</span><strong>{attention.length} trucks</strong></div></div></header>
       {message ? <p className="successMessage" role="status">{message}</p> : null}
       <div className="metricStrip insuranceStatusStrip">
         <div><ShieldCheck size={18} /><span>Valid</span><strong>{trucks.filter((truck) => truck.insuranceStatus === "VALID").length}</strong></div>
@@ -66,7 +66,8 @@ export function InsuranceScreen({ siteId, trucks, demoMode, onTrucksChange }: Pr
         <div className="insuranceRegisterHeading"><div><span>Policy register</span><h2>Insurance eligibility by truck</h2><p>Renewals create a new historical record; previous policies remain unchanged.</p></div><span>{attention.length} require attention</span></div>
         <div className="tableScroll">
           <table className="dataTable">
-            <thead><tr><th>Truck</th><th>Driver</th><th>Fleet officer</th><th>Expiry</th><th>Insurance</th><th>Queue state</th><th><span className="visuallyHidden">Action</span></th></tr></thead>
+            <colgroup><col className="colSubject" /><col className="colName" /><col className="colOfficer" /><col className="colWhen" /><col className="colStatus" /><col className="colStatus" /><col className="colActions" /></colgroup>
+            <thead><tr><th>Truck</th><th>Driver</th><th>Fleet officer</th><th data-col="when">Expiry</th><th data-col="status">Insurance</th><th data-col="status">Queue state</th><th><span className="visuallyHidden">Action</span></th></tr></thead>
             <tbody>{trucks.map((truck) => (
               <tr key={truck.id}>
                 <td><strong>{truck.registrationNumber}</strong><span>{truck.internalCode}</span></td>

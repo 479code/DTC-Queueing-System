@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { Fragment, useEffect, useMemo, useState, type FormEvent } from "react";
 import { FilePlus2, ListOrdered, Pencil, Plus, Search, ShieldCheck, Truck } from "lucide-react";
 import {
   saveTruck,
@@ -8,6 +8,7 @@ import {
   type TruckView
 } from "./api";
 import { Dialog, StatusBadge } from "./ui";
+import { GroupRow, groupByStatus } from "./grouping";
 import { BatchTruckDialog } from "./BatchTruckDialog";
 
 type Props = {
@@ -59,6 +60,10 @@ export function TrucksScreen({
       }),
     [queryText, status, trucks]
   );
+
+  const groups = useMemo(() => groupByStatus(filtered, (truck) => truck.currentStatus), [filtered]);
+  const showGroups = status === "ALL" && groups.length > 1;
+
 
   const openForm = (truck?: TruckView) => {
     setEditing(truck ?? null);
@@ -115,7 +120,7 @@ export function TrucksScreen({
 
   return (
     <>
-      <header className="trucksCommandHeader">
+      <header className="pageCommandHeader">
         <div><p className="eyebrow">Fleet registry</p><h1>Trucks and drivers</h1><p>Maintain the trucks, drivers, and fleet assignments that move through the refinery queue.</p></div>
         <div className="headerActions">
           <button className="secondaryButton commandButton" onClick={() => { setMessage(""); setBatchOpen(true); }} type="button"><FilePlus2 size={17} /> Batch add</button>
@@ -144,17 +149,23 @@ export function TrucksScreen({
         </div>
         <div className="tableScroll">
           <table className="dataTable">
-            <thead><tr><th>Truck</th><th>Driver</th><th>Fleet officer</th><th>Status</th><th>Insurance</th><th><span className="visuallyHidden">Actions</span></th></tr></thead>
+            <colgroup><col className="colSubject" /><col className="colName" /><col className="colOfficer" /><col className="colStatus" /><col className="colStatus" /><col className="colActions" /></colgroup>
+            <thead><tr><th>Truck</th><th>Driver</th><th>Fleet officer</th><th data-col="status">Status</th><th data-col="status">Insurance</th><th data-col="actions"><span className="visuallyHidden">Actions</span></th></tr></thead>
             <tbody>
-              {filtered.map((truck) => (
+              {groups.map((group) => (
+                <Fragment key={group.status}>
+                  {showGroups ? <GroupRow columns={6} count={group.rows.length} label={group.label} /> : null}
+                  {group.rows.map((truck) => (
                 <tr key={truck.id}>
                   <td><strong>{truck.registrationNumber}</strong><span>{truck.internalCode}</span></td>
                   <td>{truck.driverName}</td>
                   <td>{truck.fleetOfficerName}</td>
-                  <td><StatusBadge value={truck.currentStatus} /></td>
-                  <td><StatusBadge value={truck.insuranceStatus} /><span>{truck.insuranceExpiry}</span></td>
-                  <td><button aria-label={`Edit ${truck.registrationNumber}`} className="iconButton" onClick={() => openForm(truck)} title="Edit truck" type="button"><Pencil size={16} /></button></td>
+                  <td data-col="status"><StatusBadge value={truck.currentStatus} /></td>
+                  <td data-col="status"><StatusBadge value={truck.insuranceStatus} /><span>{truck.insuranceExpiry}</span></td>
+                  <td data-col="actions"><button aria-label={`Edit ${truck.registrationNumber}`} className="iconButton" onClick={() => openForm(truck)} title="Edit truck" type="button"><Pencil size={16} /></button></td>
                 </tr>
+                  ))}
+                </Fragment>
               ))}
             </tbody>
           </table>

@@ -94,7 +94,7 @@ export function BypassWorkspace({
   };
 
   return <>
-    <header className="fleetCommandHeader">
+    <header className="pageCommandHeader">
       <div><p className="eyebrow">Priority movement</p><h1>My bypass requests</h1><p>Ask for priority only when a trip genuinely needs it. An overseer decides, and an approved code arrives here ready to use.</p></div>
       <button className="primaryButton commandButton" disabled={eligible.length === 0} onClick={openRequest} type="button"><ListOrdered size={16} />Request bypass</button>
     </header>

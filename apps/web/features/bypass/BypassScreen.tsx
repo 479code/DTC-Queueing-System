@@ -108,7 +108,7 @@ export function BypassScreen() {
 
   return (
     <>
-      <header className="bypassCommandHeader"><div><p className="eyebrow">Overseer decision desk</p><h1>Bypass approvals</h1><p>Review priority requests without weakening the canonical FIFO queue or the audit record behind it.</p></div><span className="bypassPendingCount"><Clock3 size={17} /><span><b>{requests.length}</b> pending review</span></span></header>
+      <header className="pageCommandHeader"><div><p className="eyebrow">Overseer decision desk</p><h1>Bypass approvals</h1><p>Review priority requests without weakening the canonical FIFO queue or the audit record behind it.</p></div><span className="bypassPendingCount"><Clock3 size={17} /><span><b>{requests.length}</b> pending review</span></span></header>
       {message ? <p className="message" role="status">{message}</p> : null}
       <section className="bypassGuardrail"><div><ShieldCheck size={20} /><div><span>Controlled exception process</span><strong>Approval issues a truck-specific, single-use OTP. It does not change FIFO until the fleet officer validates that code.</strong></div></div><div><ListOrdered size={16} /><span>Queue order remains protected</span></div></section>
       <div className="workspaceGrid bypassWorkbench" id="requests">

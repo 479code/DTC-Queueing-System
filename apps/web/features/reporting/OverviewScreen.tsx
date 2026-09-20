@@ -66,7 +66,7 @@ export function OverviewScreen({
 
   const display = metrics;
   return <>
-    <header className="overviewCommandHeader"><div><p className="eyebrow">Operations command</p><h1>Today&apos;s refinery flow</h1><p>Monitor the live FIFO queue, programming progress, and the exceptions that need a decision.</p></div>{canRecalculate ? <button className="secondaryButton commandButton" disabled={busy} onClick={() => void refresh()} type="button">{busy ? <LoaderCircle className="spin" size={16} /> : <RefreshCw size={16} />}Refresh metrics</button> : null}</header>
+    <header className="pageCommandHeader"><div><p className="eyebrow">Operations command</p><h1>Today&apos;s refinery flow</h1><p>Monitor the live FIFO queue, programming progress, and the exceptions that need a decision.</p></div>{canRecalculate ? <button className="secondaryButton commandButton" disabled={busy} onClick={() => void refresh()} type="button">{busy ? <LoaderCircle className="spin" size={16} /> : <RefreshCw size={16} />}Refresh metrics</button> : null}</header>
     {error ? <p className="message" role="alert">{error}</p> : null}
     {display ? <>
       <section className="overviewPulse"><div><span>Live queue focus</span><h2>{queue[0] ? `${queue[0].registrationNumber} is next in the FIFO queue` : "No trucks are currently waiting"}</h2><p>{queue[0] ? `Position #${queue[0].position} · ${queue[0].driverName} · ${queue[0].fleetOfficerName}` : "New returns will appear here once their queue entry is confirmed."}</p></div><div className="overviewPulseStats"><span><b>{display.queuedCount}</b> waiting</span><span><b>{formatMinutes(display.longestCurrentWaitMinutes)}</b> longest wait</span></div><a className="overviewPulseAction" href="#queue">Open live queue</a></section>
