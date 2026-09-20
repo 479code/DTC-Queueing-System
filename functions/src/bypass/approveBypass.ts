@@ -167,10 +167,11 @@ export const approveBypass = validatedCall(
         userId: requestedBy,
         type: "BYPASS_APPROVED",
         title: "Bypass approved",
-        body: `${String(truck.registrationNumber ?? truckId)} bypass was approved. Enter the code provided by the overseer before it expires.`,
+        body: `${String(truck.registrationNumber ?? truckId)} bypass was approved. Use the authorization code below before it expires.`,
         truckId,
         bypassRequestId: data.bypassRequestId,
-        bypassAuthorizationId: authorizationRef.id
+        bypassAuthorizationId: authorizationRef.id,
+        otp
       });
 
       return {

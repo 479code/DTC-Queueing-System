@@ -360,6 +360,8 @@ export type AppNotification = {
   siteId: string;
   userId: string;
   type: NotificationType;
+  /** Present only on an approved bypass, until the code is validated or expires. */
+  otp?: string;
   title: string;
   body: string;
   truckId?: string;

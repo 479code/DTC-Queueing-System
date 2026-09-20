@@ -64,12 +64,19 @@ test("fleet return through dispatch preserves FIFO, bypass approval, OTP, ATC, r
   const approved = await approveBypass.run(request(overseerId, ["overseer"], { siteId, bypassRequestId: bypass.bypassRequestId }));
   assert.match(approved.otp, /^\d{6}$/);
 
+  const deliveredBefore = await db.collection(`sites/${siteId}/notifications`)
+    .where("userId", "==", fleetOfficerId).where("type", "==", "BYPASS_APPROVED").get();
+  assert.equal(deliveredBefore.docs.length, 1, "the approved code must reach the assigned fleet officer");
+  assert.equal(deliveredBefore.docs[0].data().otp, approved.otp);
+
   const validated = await validateBypassOtp.run(request(fleetOfficerId, ["fleetOfficer"], {
     siteId,
     truckId: fleetTruckId,
     otp: approved.otp
   }));
   assert.equal(validated.status, "VALIDATED");
+  const deliveredAfter = await db.doc(`sites/${siteId}/notifications/${deliveredBefore.docs[0].id}`).get();
+  assert.equal(deliveredAfter.data()?.otp, undefined, "the delivered code must be cleared once validated");
 
   const preview = await previewProgrammingBatch.run(request(programmerId, ["programmingOfficer"], {
     siteId,

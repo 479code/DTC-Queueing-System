@@ -1,6 +1,6 @@
 import { BYPASS_OTP_MAX_FAILED_ATTEMPTS } from "@refinery/shared";
 import { validateBypassOtpInputSchema } from "@refinery/validation";
-import { Timestamp } from "firebase-admin/firestore";
+import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { writeAuditEvent } from "../shared/audit.js";
 import { requireAuth, requireRole, requireSameSite } from "../shared/auth.js";
 import { validatedCall } from "../shared/callable.js";
@@ -13,6 +13,7 @@ import { db } from "../shared/firebase.js";
 import {
   bypassAuthorizationsRef,
   bypassRequestsRef,
+  notificationsRef,
   queueCyclesRef,
   trucksRef
 } from "../shared/paths.js";
@@ -102,6 +103,9 @@ export const validateBypassOtp = validatedCall(
 
         const authorization = authorizationSnap.data() ?? {};
         const queueCycleId = String(bypassRequest.queueCycleId);
+        const deliveredCodes = await transaction.get(
+          notificationsRef(data.siteId).where("bypassAuthorizationId", "==", authorizationId)
+        );
         const [cycleSnap, truckSnap] = await Promise.all([
           transaction.get(queueCyclesRef(data.siteId).doc(queueCycleId)),
           transaction.get(trucksRef(data.siteId).doc(data.truckId))
@@ -251,6 +255,11 @@ export const validateBypassOtp = validatedCall(
           status: "VALIDATED",
           validatedAt: now
         });
+
+        // The delivered code has served its purpose; do not leave it readable.
+        for (const delivered of deliveredCodes.docs) {
+          transaction.update(delivered.ref, { otp: FieldValue.delete() });
+        }
 
         writeAuditEvent(transaction, {
           siteId: data.siteId,

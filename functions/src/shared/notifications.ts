@@ -11,6 +11,8 @@ type NotificationInput = {
   truckId?: string;
   bypassRequestId?: string;
   bypassAuthorizationId?: string;
+  /** Delivered to the assigned fleet officer only, and cleared once used. */
+  otp?: string;
 };
 
 export function writeNotification(

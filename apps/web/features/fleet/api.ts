@@ -1,4 +1,5 @@
-import { auth, functions } from "../../firebase/client";
+import { collection, onSnapshot, query, where, type Unsubscribe } from "firebase/firestore";
+import { auth, db, functions } from "../../firebase/client";
 import { callOperationalApi } from "../../firebase/operations";
 import type { InsuranceStatus, TruckStatus } from "../operations/api";
 
@@ -28,6 +29,41 @@ export async function requestFleetBypass(input: {
   }
 
   return callOperationalApi<typeof input, { bypassRequestId: string; queuePositionAtRequest: number; numberOfTrucksBypassed: number }>("requestBypass", input);
+}
+
+export type IssuedBypassCode = {
+  id: string;
+  truckId: string;
+  otp: string;
+  title: string;
+  body: string;
+};
+
+// The approved code is delivered to the assigned officer's own notification,
+// which only they can read, so no one has to relay it by hand.
+export function subscribeToIssuedBypassCodes(
+  siteId: string,
+  userId: string,
+  onData: (codes: IssuedBypassCode[]) => void
+): Unsubscribe {
+  if (!db || !userId) {
+    onData([]);
+    return () => undefined;
+  }
+  return onSnapshot(
+    query(collection(db, "sites", siteId, "notifications"), where("userId", "==", userId), where("type", "==", "BYPASS_APPROVED")),
+    (snapshot) => onData(snapshot.docs
+      .map((item) => ({ id: item.id, ...item.data() } as Record<string, unknown> & { id: string }))
+      .filter((item) => typeof item.otp === "string" && item.otp)
+      .map((item) => ({
+        id: item.id,
+        truckId: String(item.truckId ?? ""),
+        otp: String(item.otp),
+        title: String(item.title ?? "Bypass approved"),
+        body: String(item.body ?? "")
+      }))),
+    () => onData([])
+  );
 }
 
 export async function validateFleetBypassOtp(input: {

@@ -873,3 +873,8 @@
 @keyframes accessSpin { to { transform: rotate(360deg); } } @keyframes accessPulse { 50% { opacity: .35; } }
 @media (max-width: 800px) { .accessGate { grid-template-columns: 1fr; }.accessIntro { min-height: 270px; padding: 28px 24px; }.accessIntroCopy { margin: auto 0 0; }.accessIntroCopy h1 { font-size: 31px; }.accessSignals { display: none; }.accessPanel { padding: 24px 16px 34px; }.signInForm, .accessPending { padding: 26px 22px; }.accountState { display: none; } }
 a.accessSubmit { text-decoration: none; }
+
+.issuedCodeList { display: grid; gap: 10px; margin: 14px 0; }
+.issuedCode { background: rgb(255 255 255 / 10%); border: 1px solid rgb(255 255 255 / 18%); border-radius: 8px; display: grid; gap: 6px; padding: 12px 14px; }
+.issuedCode span { font-size: 10px; font-weight: 800; letter-spacing: .08em; opacity: .8; text-transform: uppercase; }
+.issuedCode strong { font-size: 26px; font-variant-numeric: tabular-nums; letter-spacing: .22em; }
