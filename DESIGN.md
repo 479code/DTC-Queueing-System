@@ -238,6 +238,35 @@ is the main thing that makes the app feel unfinished.
 - **Numbers align right; their headers align right too.**
 - Icons are 16px, optically centred, never larger than the text beside them.
 
+### Grouping by status
+
+**A list never interleaves statuses.** Rows are grouped, each group under a
+sticky header carrying its name and count, and the groups always appear in the
+same order across the whole app:
+
+1. **Awaiting availability** — someone must answer now
+2. **Ready for programming** — confirmed, waiting on the programming officer
+3. **In the line** — queued, ordered by queue-entry time
+4. **Programmed** — carrying an ATC, waiting to load
+5. **On trip** — out, nothing to do
+6. **Insurance hold** — blocked, needs an administrator
+7. **Inactive** — retired from operations
+
+Rules:
+
+- Within a group, order by the column that matters for that group: queue-entry
+  time for the line, remaining time for anything on a deadline, registration
+  everywhere else.
+- A group with no rows is not rendered; its absence is the information.
+- The group header is `label` type on `--surface-sunken`, sticky to the top of
+  its scroll area, with the count on the right in `figure` type.
+- Filtering to one status hides the headers, since they would then say only one
+  thing.
+- Sorting by a column sorts **within** groups, never across them. A person
+  sorting by wait time still wants held trucks kept out of the queue.
+- The Live Queue is the exception: it is a single group by definition, and its
+  rows carry their position instead.
+
 ---
 
 ## 6. Depth
