@@ -1116,12 +1116,12 @@ a.accessSubmit { text-decoration: none; }
 .auditPager { align-items: center; border-top: 1px solid var(--border); color: var(--muted); display: flex; font-size: 12px; gap: 10px; justify-content: center; padding: 14px; }
 
 /* Notifications live beside the signed-in person in the sidebar foot. */
-.accountIdentity { grid-template-columns: 28px minmax(0, 1fr) auto; }
+.accountIdentity { grid-template-columns: 28px minmax(0, 1fr); }
 .notificationBell { position: relative; }
-.notificationButton { border: 1px solid transparent; color: #a7bbab; height: 32px; position: relative; width: 32px; }
-.notificationButton:hover { background: #26332b; border-color: #3c4d42; color: #eaf5e3; }
+.notificationButton { background: #fff; border: 1px solid var(--border); color: #4e6553; height: 38px; position: relative; width: 38px; }
+.notificationButton:hover { background: #f3f7f1; border-color: #c2d0c4; color: var(--text); }
 .notificationCount { background: #d85942; border-radius: 999px; color: #fff; font-size: 9px; font-weight: 800; line-height: 1; min-width: 15px; padding: 3px 4px; position: absolute; right: -3px; top: -3px; }
-.notificationPanel { background: #fff; border: 1px solid var(--border); border-radius: 12px; bottom: calc(100% + 10px); box-shadow: 0 18px 44px -20px rgb(23 31 41 / 45%); color: var(--text); left: -6px; max-height: 380px; overflow: auto; position: absolute; width: 300px; z-index: 40; }
+.notificationPanel { background: #fff; border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 18px 44px -20px rgb(23 31 41 / 45%); color: var(--text); max-height: 380px; overflow: auto; position: absolute; right: 0; top: calc(100% + 8px); width: 320px; z-index: 40; }
 .notificationPanelHead { align-items: baseline; background: #f7faf6; border-bottom: 1px solid var(--border); display: flex; gap: 8px; justify-content: space-between; padding: 11px 14px; position: sticky; top: 0; }
 .notificationPanelHead strong { font-size: 12.5px; }
 .notificationPanelHead span { color: var(--muted); font-size: 10.5px; }
@@ -1165,3 +1165,10 @@ a.accessSubmit { text-decoration: none; }
   .pageCommandHeader { margin-bottom: 12pt; }
   a[href]::after { content: ""; }
 }
+
+/* The bell sits at the top of the page, always in view. */
+.contentTopBar { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+
+/* One footer block: who is signed in, sign out, then the environment line. */
+.accountState { margin-top: auto; }
+.environmentState { margin-top: 12px; }

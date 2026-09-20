@@ -241,7 +241,6 @@ export default function Page() {
           <div className="accountIdentity">
             <span className="accountAvatar" aria-hidden="true">{(userEmail || "?").slice(0, 1).toUpperCase()}</span>
             <div><strong>{userEmail || "Signed-in staff"}</strong><small>{roles.map((role) => role.replace(/([A-Z])/g, " $1").replace(/^./, (value) => value.toUpperCase())).join(", ")}</small></div>
-            <NotificationBell siteId={siteId} userId={userId} />
           </div>
           <button className="signOutButton" onClick={() => { if (auth) void signOut(auth); }} type="button"><LogOut size={15} />Sign out</button>
         </div> : null}
@@ -249,6 +248,7 @@ export default function Page() {
       </aside>
 
       <section className="content">
+        {!demoMode ? <div className="contentTopBar"><NotificationBell siteId={siteId} userId={userId} /></div> : null}
         {dataMessage ? <p className="connectionMessage">{dataMessage}</p> : null}
         {deniedView ? <p className="accessDeniedNote" role="status">{deniedView} is not part of your access. Showing {visibleNavigation[0]?.label ?? "your workspace"} instead.</p> : null}
         {activeView === "my-bypass" ? <BypassWorkspace fleetOfficerId={userId} queue={queue} siteId={siteId} trucks={trucks} /> : null}
