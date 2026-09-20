@@ -176,14 +176,20 @@ test("a rejected bypass records the overseer's reason and reaches the officer", 
   assert.ok(events.docs.some((item) => item.data().eventType === "BYPASS_REJECTED"));
 });
 
-test("order workbook rows keep leading zeroes and reject duplicates and blanks", () => {
+test("order workbook rows keep leading zeroes, and a bad row never costs the good ones", () => {
   const header = ["S/N", "ATC NO", "SALES ORDER NO"];
   const parsed = parseOrderRows([header, [1, "0472438", "3100458812"], [2, "0472439", "3100458813"]]);
-  assert.deepEqual(parsed.map((row) => row.atcNo), ["0472438", "0472439"], "a supplied ATC must keep its leading zero");
+  assert.deepEqual(parsed.rows.map((row) => row.atcNo), ["0472438", "0472439"], "a supplied ATC must keep its leading zero");
+  assert.equal(parsed.skipped.length, 0);
 
-  assert.throws(() => parseOrderRows([header, [1, "0472438", "3100458812"], [2, "0472438", "3100458899"]]), /appears more than once/i);
-  assert.throws(() => parseOrderRows([header, [1, "", "3100458812"]]), /missing ATC NO/i);
-  assert.throws(() => parseOrderRows([header, [1, "0472438", ""]]), /missing SALES ORDER NO/i);
+  const repeated = parseOrderRows([header, [1, "0472438", "3100458812"], [2, "0472438", "3100458899"]]);
+  assert.deepEqual(repeated.rows.map((row) => row.salesOrderNo), ["3100458812"]);
+  assert.match(repeated.skipped[0].reason, /Repeated in this file/i);
+
+  const blanks = parseOrderRows([header, [1, "", "3100458812"], [2, "0472439", ""], [3, "0472440", "3100458814"]]);
+  assert.deepEqual(blanks.rows.map((row) => row.atcNo), ["0472440"]);
+  assert.deepEqual(blanks.skipped.map((row) => row.reason), ["No ATC number", "No sales order number"]);
+
   assert.throws(() => parseOrderRows([["S/N", "TRUCK"], [1, "ABC 123 XY"]]), /must contain ATC NO and SALES ORDER NO/i);
 });
 

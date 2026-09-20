@@ -124,40 +124,9 @@ export const confirmTruckAvailability = validatedCall(confirmTruckAvailabilityIn
     if (!hasValidInsurance(truck)) failedPrecondition("The truck must have valid insurance before availability can be confirmed.");
     if (itemData.availabilityStatus !== "PENDING" || cycleSnapshot.data()?.status !== "AWAITING_AVAILABILITY") failedPrecondition("This availability request is no longer open.");
     if (timestamp(itemData.availabilityExpiresAt, "availability expiry").toMillis() <= Date.now()) failedPrecondition("The one-hour availability window has expired.");
-    // Firestore transactions require every read to happen before the first write,
-    // so collect the chain of timed-out trucks this confirmation replaces first.
-    const replacedChain: Array<{ id: string; ref: FirebaseFirestore.DocumentReference; data: FirebaseFirestore.DocumentData }> = [];
-    let nextReplacedId = String(cycleSnapshot.data()?.replacementForQueueCycleId ?? "");
-    for (let depth = 0; nextReplacedId && depth < 20; depth += 1) {
-      const replacedRef = queueCyclesRef(data.siteId).doc(nextReplacedId);
-      const replacedSnapshot = await transaction.get(replacedRef);
-      if (!replacedSnapshot.exists || replacedSnapshot.data()?.status !== "AWAITING_REPLACEMENT") break;
-      replacedChain.push({ id: nextReplacedId, ref: replacedRef, data: replacedSnapshot.data() ?? {} });
-      nextReplacedId = String(replacedSnapshot.data()?.replacementForQueueCycleId ?? "");
-    }
     transaction.update(item.ref, { availabilityStatus: "CONFIRMED", availabilityConfirmedAt: FieldValue.serverTimestamp(), confirmedBy: context.uid });
     transaction.update(cycleRef, { status: "READY_FOR_PROGRAMMING", availabilityConfirmedAt: FieldValue.serverTimestamp(), availabilityConfirmedBy: context.uid, updatedAt: FieldValue.serverTimestamp() });
     transaction.update(truckRef, { currentStatus: "READY_FOR_PROGRAMMING", updatedAt: FieldValue.serverTimestamp() });
-    for (const { id: replacedCycleId, ref: replacedRef, data: replaced } of replacedChain) {
-      const replacedTruckRef = trucksRef(data.siteId).doc(String(replaced.truckId));
-      transaction.update(replacedRef, {
-        status: "QUEUED",
-        queueEnteredAt: FieldValue.serverTimestamp(),
-        replacementForQueueCycleId: FieldValue.delete(),
-        updatedAt: FieldValue.serverTimestamp()
-      });
-      transaction.update(replacedTruckRef, { currentStatus: "QUEUED", updatedAt: FieldValue.serverTimestamp() });
-      writeAuditEvent(transaction, {
-        siteId: data.siteId,
-        eventType: "QUEUE_REENTERED_AFTER_TIMEOUT",
-        actorUserId: context.uid,
-        actorRoles: context.roles,
-        truckId: String(replaced.truckId),
-        queueCycleId: replacedCycleId,
-        programmingBatchId: data.batchId,
-        metadata: { replacementQueueCycleId: data.queueCycleId }
-      });
-    }
     writeAuditEvent(transaction, {
       siteId: data.siteId,
       eventType: "AVAILABILITY_CONFIRMED",
@@ -188,23 +157,50 @@ export async function expireAvailabilityRequests(now = Timestamp.now()): Promise
       const batchRef = programmingBatchesRef(siteId).doc(batchId);
       const itemRef = batchRef.collection("items").doc(item.id);
       const cycleRef = queueCyclesRef(siteId).doc(queueCycleId);
-      const [freshItem, cycleSnapshot] = await Promise.all([transaction.get(itemRef), transaction.get(cycleRef)]);
+      const [freshItem, cycleSnapshot, batchSnapshot] = await Promise.all([transaction.get(itemRef), transaction.get(cycleRef), transaction.get(batchRef)]);
       if (!freshItem.exists || !cycleSnapshot.exists) return false;
+      const batchIsOpen = batchSnapshot.data()?.status === "AWAITING_AVAILABILITY";
       const current = freshItem.data() ?? {};
       if (current.availabilityStatus !== "PENDING" || timestamp(current.availabilityExpiresAt, "availability expiry").toMillis() > now.toMillis()) return false;
       const truckRef = trucksRef(siteId).doc(String(current.truckId));
       // Firestore transactions require every read to happen before the first write.
-      const replacementSnapshot = await transaction.get(queueCyclesRef(siteId).where("status", "==", "QUEUED").orderBy("queueEnteredAt", "asc").limit(1));
-      const replacement = replacementSnapshot.docs[0];
-      const replacementTruckRef = replacement ? trucksRef(siteId).doc(String(replacement.data().truckId)) : null;
-      const replacementTruck = replacementTruckRef ? await transaction.get(replacementTruckRef) : null;
+      // The next in line may not be usable (expired insurance), so consider a
+      // few and take the first that can actually be asked.
+      const candidateSnapshot = await transaction.get(queueCyclesRef(siteId).where("status", "==", "QUEUED").orderBy("queueEnteredAt", "asc").limit(10));
+      const candidateTrucks = candidateSnapshot.docs.length
+        ? await transaction.getAll(...candidateSnapshot.docs.map((candidate) => trucksRef(siteId).doc(String(candidate.data().truckId))))
+        : [];
+      const candidateIndex = candidateSnapshot.docs.findIndex((_, index) => {
+        const candidateTruck = candidateTrucks[index];
+        return candidateTruck?.exists && hasValidInsurance(candidateTruck.data() ?? {});
+      });
+      const replacement = candidateIndex < 0 ? undefined : candidateSnapshot.docs[candidateIndex];
+      const replacementTruck = candidateIndex < 0 ? undefined : candidateTrucks[candidateIndex];
+      const replacementTruckRef = replacementTruck ? trucksRef(siteId).doc(replacementTruck.id) : null;
       transaction.update(itemRef, { availabilityStatus: "EXPIRED", availabilityExpiredAt: FieldValue.serverTimestamp() });
-      transaction.update(cycleRef, { status: "AWAITING_REPLACEMENT", availabilityExpiredAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
-      transaction.update(truckRef, { currentStatus: "AWAITING_REPLACEMENT", updatedAt: FieldValue.serverTimestamp() });
+      // A truck that missed its window goes straight back to the end of the
+      // queue. Parking it until a replacement confirmed used to strand it for
+      // good whenever no replacement confirmed, or the batch closed first.
+      transaction.update(cycleRef, {
+        status: "QUEUED",
+        queueEnteredAt: FieldValue.serverTimestamp(),
+        availabilityExpiredAt: FieldValue.serverTimestamp(),
+        availabilityBatchId: FieldValue.delete(),
+        availabilityItemId: FieldValue.delete(),
+        availabilityExpiresAt: FieldValue.delete(),
+        replacementForQueueCycleId: FieldValue.delete(),
+        updatedAt: FieldValue.serverTimestamp()
+      });
+      transaction.update(truckRef, {
+        currentStatus: "QUEUED",
+        availabilityBatchId: FieldValue.delete(),
+        availabilityQueueCycleId: FieldValue.delete(),
+        updatedAt: FieldValue.serverTimestamp()
+      });
       writeAuditEvent(transaction, { siteId, eventType: "AVAILABILITY_EXPIRED", actorUserId: "system", actorRoles: ["administrator"], truckId: String(current.truckId), queueCycleId, programmingBatchId: batchId });
-      if (!replacement || !replacementTruckRef || !replacementTruck) return true;
+      writeAuditEvent(transaction, { siteId, eventType: "QUEUE_REENTERED_AFTER_TIMEOUT", actorUserId: "system", actorRoles: ["administrator"], truckId: String(current.truckId), queueCycleId, programmingBatchId: batchId });
+      if (!batchIsOpen || !replacement || !replacementTruckRef || !replacementTruck) return true;
       const replacementData = replacement.data();
-      if (!replacementTruck.exists || !hasValidInsurance(replacementTruck.data() ?? {})) return true;
       const replacementItemRef = batchRef.collection("items").doc();
       const expiresAt = Timestamp.fromMillis(now.toMillis() + availabilityWindowMs);
       transaction.set(replacementItemRef, {
@@ -225,6 +221,45 @@ export async function expireAvailabilityRequests(now = Timestamp.now()): Promise
         title: "Availability confirmation needed",
         body: `${String(replacementTruck.data()?.registrationNumber ?? replacementData.truckId)} has one hour to confirm availability for an open programming slot.`,
         truckId: String(replacementData.truckId)
+      });
+      return true;
+    });
+    if (changed) count += 1;
+  }
+  return count;
+}
+
+/**
+ * Availability expiry used to park a truck in AWAITING_REPLACEMENT until its
+ * replacement confirmed, which never happened if no replacement was found or
+ * the batch closed first. Nothing produces that state now, so anything left in
+ * it is stranded and belongs back in the queue.
+ */
+export async function requeueStrandedReplacements(): Promise<number> {
+  const stranded = await db.collectionGroup("queueCycles").where("status", "==", "AWAITING_REPLACEMENT").limit(100).get();
+  let count = 0;
+  for (const cycle of stranded.docs) {
+    const siteId = String(cycle.data().siteId ?? "");
+    const truckId = String(cycle.data().truckId ?? "");
+    if (!siteId || !truckId) continue;
+    const changed = await db.runTransaction(async (transaction) => {
+      const fresh = await transaction.get(cycle.ref);
+      if (!fresh.exists || fresh.data()?.status !== "AWAITING_REPLACEMENT") return false;
+      transaction.update(cycle.ref, {
+        status: "QUEUED",
+        queueEnteredAt: FieldValue.serverTimestamp(),
+        replacementForQueueCycleId: FieldValue.delete(),
+        updatedAt: FieldValue.serverTimestamp()
+      });
+      transaction.update(trucksRef(siteId).doc(truckId), { currentStatus: "QUEUED", updatedAt: FieldValue.serverTimestamp() });
+      writeAuditEvent(transaction, {
+        siteId,
+        eventType: "QUEUE_REENTERED_AFTER_TIMEOUT",
+        actorUserId: "system",
+        actorRoles: ["administrator"],
+        truckId,
+        queueCycleId: cycle.id,
+        metadata: { reason: "Returned to the queue after waiting on a replacement that never came." }
       });
       return true;
     });

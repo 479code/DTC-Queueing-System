@@ -2,6 +2,7 @@ import {
   db,
   deliverNotificationForRecord,
   expireAvailabilityRequests,
+  requeueStrandedReplacements,
   expireInsuranceRecords,
   refreshAllDailyMetrics
 } from "@refinery/functions";
@@ -86,6 +87,7 @@ async function tick(): Promise<void> {
   try {
     await deliverPendingNotifications();
     await expireAvailabilityRequests();
+    await requeueStrandedReplacements();
     await runOncePerDay("insurance-expiry", 15, expireInsuranceRecords);
     await runOncePerDay("daily-metrics", 23 * 60 + 55, refreshAllDailyMetrics);
   } finally {

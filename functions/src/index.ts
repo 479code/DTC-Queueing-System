@@ -5,7 +5,7 @@ export { getQueuePosition } from "./queue/getQueuePosition.js";
 export { previewProgrammingBatch } from "./programming/previewProgrammingBatch.js";
 export { listValidatedBypasses } from "./programming/listValidatedBypasses.js";
 export { confirmProgrammingBatch } from "./programming/confirmProgrammingBatch.js";
-export { startAvailabilityBatch, confirmTruckAvailability, expireAvailabilityRequests, getAvailabilityBatch } from "./programming/availability.js";
+export { startAvailabilityBatch, confirmTruckAvailability, expireAvailabilityRequests, requeueStrandedReplacements, getAvailabilityBatch } from "./programming/availability.js";
 export { confirmProgrammingWithOrders } from "./programming/confirmProgrammingWithOrders.js";
 export { requestBypass } from "./bypass/requestBypass.js";
 export { approveBypass } from "./bypass/approveBypass.js";

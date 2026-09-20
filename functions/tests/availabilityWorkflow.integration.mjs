@@ -3,7 +3,7 @@ import test from "node:test";
 
 const { Timestamp } = await import("firebase-admin/firestore");
 const { db } = await import("../lib/shared/firebase.js");
-const { startAvailabilityBatch, confirmTruckAvailability, expireAvailabilityRequests } = await import("../lib/programming/availability.js");
+const { startAvailabilityBatch, confirmTruckAvailability, expireAvailabilityRequests, requeueStrandedReplacements } = await import("../lib/programming/availability.js");
 const { confirmProgrammingWithOrders } = await import("../lib/programming/confirmProgrammingWithOrders.js");
 const { confirmTruckDispatch } = await import("../lib/dispatch/confirmTruckDispatch.js");
 
@@ -47,16 +47,17 @@ test("availability batch confirms, expires, replaces from FIFO, re-queues the ex
 
   const expiredCount = await expireAvailabilityRequests(Timestamp.fromMillis(now + 61 * 60 * 1000));
   assert.equal(expiredCount, 1);
-  assert.equal((await cycleRef("truck-b-cycle").get()).data()?.status, "AWAITING_REPLACEMENT");
+  // The truck that missed its window goes back to the queue at once, rather
+  // than waiting on a replacement that may never confirm.
+  const requeued = await cycleRef("truck-b-cycle").get();
+  assert.equal(requeued.data()?.status, "QUEUED");
+  assert.ok(requeued.data()?.queueEnteredAt.toMillis() > now, "expired truck must return to the back of the queue");
+  assert.equal((await truckRef("truck-b").get()).data()?.currentStatus, "QUEUED");
   const replacementCycle = await cycleRef("truck-c-cycle").get();
   assert.equal(replacementCycle.data()?.status, "AWAITING_AVAILABILITY");
   assert.equal(replacementCycle.data()?.replacementForQueueCycleId, "truck-b-cycle");
 
   await confirmTruckAvailability.run(request(fleetOfficerId, ["fleetOfficer"], { siteId, batchId: started.batchId, queueCycleId: "truck-c-cycle" }));
-  const requeued = await cycleRef("truck-b-cycle").get();
-  assert.equal(requeued.data()?.status, "QUEUED");
-  assert.ok(requeued.data()?.queueEnteredAt.toMillis() > now, "expired truck must return to the back of the queue");
-  assert.equal((await truckRef("truck-b").get()).data()?.currentStatus, "QUEUED");
 
   const programmed = await confirmProgrammingWithOrders.run(request(programmerId, ["programmingOfficer"], {
     siteId,
@@ -96,4 +97,44 @@ test("availability batch confirms, expires, replaces from FIFO, re-queues the ex
   const eventTypes = new Set(auditEventsAfterDispatch.docs.map((item) => item.data().eventType));
   ["DISPATCH_CONFIRMED", "AVAILABILITY_REQUESTED", "AVAILABILITY_CONFIRMED", "AVAILABILITY_EXPIRED", "QUEUE_REENTERED_AFTER_TIMEOUT", "ORDER_ATC_ASSIGNED", "TRUCK_PROGRAMMED", "PROGRAMMING_BATCH_CONFIRMED"]
     .forEach((eventType) => assert.ok(eventTypes.has(eventType), `missing ${eventType}`));
+});
+
+test("a truck whose window expires with nobody left to replace it still returns to the queue", async () => {
+  const now = Date.now();
+  const lonelySite = `${siteId}-lonely`;
+  const lonelyTruck = db.doc(`sites/${lonelySite}/trucks/truck-lone`);
+  const lonelyCycle = db.doc(`sites/${lonelySite}/queueCycles/truck-lone-cycle`);
+  await Promise.all([
+    lonelyTruck.set({ registrationNumber: "TRUCK-LONE", normalizedRegistration: "TRUCK-LONE", assignedFleetOfficerId: fleetOfficerId, currentStatus: "QUEUED", activeCycleId: "truck-lone-cycle", isActive: true, latestInsuranceStatus: "VALID" }),
+    lonelyCycle.set({ siteId: lonelySite, truckId: "truck-lone", fleetOfficerId, status: "QUEUED", queueEnteredAt: Timestamp.fromMillis(now - 300000) })
+  ]);
+
+  await startAvailabilityBatch.run({ auth: { uid: programmerId, token: { siteId: lonelySite, roles: ["programmingOfficer"] } }, data: { siteId: lonelySite, requestedSize: 1 } });
+  assert.equal((await lonelyCycle.get()).data()?.status, "AWAITING_AVAILABILITY");
+
+  await expireAvailabilityRequests(Timestamp.fromMillis(now + 61 * 60 * 1000));
+
+  const after = await lonelyCycle.get();
+  assert.equal(after.data()?.status, "QUEUED", "with no replacement available the truck must not be stranded");
+  assert.equal((await lonelyTruck.get()).data()?.currentStatus, "QUEUED");
+  assert.ok(after.data()?.queueEnteredAt.toMillis() > now, "it returns to the back of the queue");
+});
+
+test("a truck already stranded in AWAITING_REPLACEMENT is swept back into the queue", async () => {
+  const now = Date.now();
+  const strandedSite = `${siteId}-stranded`;
+  const strandedTruck = db.doc(`sites/${strandedSite}/trucks/truck-stuck`);
+  const strandedCycle = db.doc(`sites/${strandedSite}/queueCycles/truck-stuck-cycle`);
+  await Promise.all([
+    strandedTruck.set({ registrationNumber: "TRUCK-STUCK", normalizedRegistration: "TRUCK-STUCK", assignedFleetOfficerId: fleetOfficerId, currentStatus: "AWAITING_REPLACEMENT", activeCycleId: "truck-stuck-cycle", isActive: true, latestInsuranceStatus: "VALID" }),
+    strandedCycle.set({ siteId: strandedSite, truckId: "truck-stuck", fleetOfficerId, status: "AWAITING_REPLACEMENT", queueEnteredAt: Timestamp.fromMillis(now - 900000) })
+  ]);
+
+  const swept = await requeueStrandedReplacements();
+  assert.ok(swept >= 1);
+
+  const after = await strandedCycle.get();
+  assert.equal(after.data()?.status, "QUEUED");
+  assert.equal((await strandedTruck.get()).data()?.currentStatus, "QUEUED");
+  assert.equal(await requeueStrandedReplacements(), 0, "the sweep leaves nothing behind to do twice");
 });

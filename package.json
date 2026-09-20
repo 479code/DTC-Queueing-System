@@ -12,7 +12,7 @@
     "emulators": "firebase emulators:start",
     "emulators:export": "firebase emulators:export ./firebase-emulator-data",
     "test:rules": "firebase emulators:exec --config firebase.rules-test.json --project refinery-queue-rules-test --only firestore \"node --test apps/web/tests/firestoreRules.test.mjs\"",
-    "test:workflow": "corepack pnpm --filter @refinery/shared build && corepack pnpm --filter @refinery/types build && corepack pnpm --filter @refinery/validation build && corepack pnpm --filter @refinery/functions build && firebase emulators:exec --config firebase.workflow-test.json --project refinery-queue-workflow-test --only firestore,storage \"node --test functions/tests/fleetWorkflow.integration.mjs functions/tests/availabilityWorkflow.integration.mjs functions/tests/operationalRules.integration.mjs\""
+    "test:workflow": "corepack pnpm --filter @refinery/shared build && corepack pnpm --filter @refinery/types build && corepack pnpm --filter @refinery/validation build && corepack pnpm --filter @refinery/functions build && firebase emulators:exec --config firebase.workflow-test.json --project refinery-queue-workflow-test --only firestore,storage \"node --test --test-concurrency=1 functions/tests/fleetWorkflow.integration.mjs functions/tests/availabilityWorkflow.integration.mjs functions/tests/operationalRules.integration.mjs\""
   },
   "devDependencies": {
     "firebase-tools": "^13.35.1",
