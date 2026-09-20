@@ -19,13 +19,26 @@ const demoOrders: OrderView[] = [
 function dateText(value: unknown): string {
   return formatSiteTime(value);
 }
+
+/**
+ * Early imports stored the delivery date as a full Date toString, so rows
+ * written then read "Tue Sep 22 2026 00:00:00 GMT+0000 (Coordinated ...)".
+ * Show those as a date; anything already readable is left alone.
+ */
+function deliveryDateText(value: unknown): string {
+  const text = String(value ?? "").trim();
+  if (!text || !text.includes(":")) return text;
+  const parsed = new Date(text);
+  if (Number.isNaN(parsed.getTime())) return text;
+  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }).format(parsed);
+}
 function mapImport(document: QueryDocumentSnapshot<DocumentData>): OrderImportView {
   const data = document.data();
   return { id: document.id, originalFileName: String(data.originalFileName ?? document.id), status: String(data.status ?? "FAILED"), rowsProcessed: Number(data.rowsProcessed ?? 0), rowsSkipped: Number(data.rowsSkipped ?? 0), uploadedAt: dateText(data.uploadedAt) };
 }
 function mapOrder(document: QueryDocumentSnapshot<DocumentData>): OrderView {
   const data = document.data();
-  return { id: document.id, atcNo: String(data.atcNo ?? ""), salesOrderNo: String(data.salesOrderNo ?? ""), dprpCustomerName: String(data.customerName ?? "Customer not recorded"), receivingCustomerName: String(data.receivingCustomer ?? data.customerName ?? "Station not recorded"), state: String(data.state ?? ""), volume: typeof data.volume === "number" ? data.volume : undefined, expectedDeliveryDate: String(data.expectedDeliveryDate ?? ""), status: String(data.status ?? "AVAILABLE") };
+  return { id: document.id, atcNo: String(data.atcNo ?? ""), salesOrderNo: String(data.salesOrderNo ?? ""), dprpCustomerName: String(data.customerName ?? "Customer not recorded"), receivingCustomerName: String(data.receivingCustomer ?? data.customerName ?? "Station not recorded"), state: String(data.state ?? ""), volume: typeof data.volume === "number" ? data.volume : undefined, expectedDeliveryDate: deliveryDateText(data.expectedDeliveryDate), status: String(data.status ?? "AVAILABLE") };
 }
 export function subscribeToOrderImports(siteId: string, demoMode: boolean, onData: (items: OrderImportView[]) => void, onError: (message: string) => void): Unsubscribe {
   if (demoMode || !db) { onData(demoImports); return () => undefined; }
