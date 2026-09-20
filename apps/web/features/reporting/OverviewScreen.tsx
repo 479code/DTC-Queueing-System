@@ -6,7 +6,7 @@ import type { QueueEntryView, TruckView } from "../operations/api";
 import { StatusBadge } from "../operations/ui";
 import { recalculateMetrics, subscribeToAuditEvents, subscribeToDailyMetrics, type AuditEventView, type DailyMetricsView } from "./api";
 import { subscribeToProgrammedTrucks, type ProgrammedTruckView } from "../operations/api";
-import { serverNow } from "../../lib/time";
+import { serverNow, siteDateKey, siteDayOf } from "../../lib/time";
 
 function formatMinutes(value: number): string {
   if (value <= 0) return "0 min";
@@ -56,8 +56,9 @@ export function OverviewScreen({
   }, [demoMode, siteId]);
 
   const live = useMemo(() => {
-    const today = new Date(serverNow()).toDateString();
-    const programmedToday = programmed.filter((record) => new Date(record.programmedAtMillis).toDateString() === today);
+    // "Today" is the refinery's day, not the day on this device.
+    const today = siteDateKey(new Date(serverNow()));
+    const programmedToday = programmed.filter((record) => siteDayOf(record.programmedAtMillis) === today);
     const longestWaitMinutes = queue.reduce((longest, entry) => {
       const waited = Math.floor((serverNow() - entry.queueEnteredAtMillis) / 60000);
       return waited > longest ? waited : longest;
@@ -68,7 +69,9 @@ export function OverviewScreen({
       awaitingAvailability: trucks.filter((truck) => truck.currentStatus === "AWAITING_AVAILABILITY").length,
       insuranceHoldCount: trucks.filter((truck) => truck.currentStatus === "INSURANCE_HOLD").length,
       programmedCount: programmedToday.length,
-      dispatchedCount: programmedToday.filter((record) => record.status === "DISPATCHED").length,
+      // Counted by when it left, not when it was programmed: a truck programmed
+      // yesterday and dispatched this morning belongs to today.
+      dispatchedCount: programmed.filter((record) => record.dispatchConfirmedAtMillis && siteDayOf(record.dispatchConfirmedAtMillis) === today).length,
       awaitingDispatch: programmed.filter((record) => record.status === "PROGRAMMED").length
     };
   }, [programmed, queue, trucks]);
@@ -98,7 +101,7 @@ export function OverviewScreen({
     <header className="pageCommandHeader"><div><p className="eyebrow">Operations command</p><h1>Today&apos;s refinery flow</h1><p>Monitor the live FIFO queue, programming progress, and the exceptions that need a decision.</p></div>{canRecalculate ? <button className="secondaryButton commandButton" disabled={busy} onClick={() => void refresh()} type="button">{busy ? <LoaderCircle className="spin" size={16} /> : <RefreshCw size={16} />}Refresh metrics</button> : null}</header>
     {error ? <p className="message" role="alert">{error}</p> : null}
     {display ? <>
-      <section className="overviewPulse"><div><span>Live queue focus</span><h2>{queue[0] ? `${queue[0].registrationNumber} is next in the FIFO queue` : "No trucks are currently waiting"}</h2><p>{queue[0] ? `Position #${queue[0].position} · ${queue[0].driverName} · ${queue[0].fleetOfficerName}` : "New returns will appear here once their queue entry is confirmed."}</p></div><div className="overviewPulseStats"><span><b>{display.queuedCount}</b> waiting</span><span><b>{formatMinutes(display.longestCurrentWaitMinutes)}</b> longest wait</span></div><a className="overviewPulseAction" href="#queue">Open live queue</a></section>
+      <section className="overviewPulse"><div><span>Live queue focus</span><h2>{queue[0] ? `${queue[0].registrationNumber} is next in the FIFO queue` : "No trucks are currently waiting"}</h2><p>{queue[0] ? `Position #${queue[0].position} · ${queue[0].driverName} · ${queue[0].fleetOfficerName}` : "New returns will appear here once their queue entry is confirmed."}</p></div><div className="overviewPulseStats"><span><b>{demoMode ? display.queuedCount : live.queuedCount}</b> waiting</span><span><b>{formatMinutes(demoMode ? display.longestCurrentWaitMinutes : live.longestWaitMinutes)}</b> longest wait</span></div><a className="overviewPulseAction" href="#queue">Open live queue</a></section>
       <section className="overviewMetrics overviewStatusGrid" aria-label="Daily operational metrics">
         <div><ListOrdered /><span>In the line</span><strong>{demoMode ? display.queuedCount : live.queuedCount}</strong><small>{(demoMode ? display.longestCurrentWaitMinutes : live.longestWaitMinutes) ? `Longest wait ${formatMinutes(demoMode ? display.longestCurrentWaitMinutes : live.longestWaitMinutes)}` : "No active wait"}</small></div>
         <div><Truck /><span>Programmed today</span><strong>{demoMode ? display.programmedCount : live.programmedCount}</strong><small>{demoMode ? `${display.fifoProgrammingCount} FIFO today` : `${live.awaitingDispatch} waiting to load`}</small></div>

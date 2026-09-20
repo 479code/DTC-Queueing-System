@@ -59,6 +59,11 @@ export function siteDateKey(now = new Date()): string {
   return `${parts.year}${parts.month}${parts.day}`;
 }
 
+/** The site's calendar day for a moment, so "today" means today at the refinery. */
+export function siteDayOf(millis: number): string {
+  return siteDateKey(new Date(millis));
+}
+
 export function millisOf(value: TimestampLike | unknown): number {
   return toDate(value)?.getTime() ?? 0;
 }

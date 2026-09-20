@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { CheckCircle2, ClipboardCheck, Search, Truck } from "lucide-react";
 import { confirmTruckDispatch, subscribeToProgrammedTrucks, type ProgrammedTruckView } from "./api";
+import { serverNow, siteDateKey, siteDayOf } from "../../lib/time";
 import { StatusBadge } from "./ui";
 import { GroupRow, groupByStatus } from "./grouping";
 import { WorkList } from "./WorkList";
@@ -39,7 +40,7 @@ export function ProgrammedScreen({ siteId, canConfirmDispatch }: { siteId: strin
   const programmedCount = records.filter((record) => record.status === "PROGRAMMED").length;
   const dispatchedCount = records.filter((record) => record.status === "DISPATCHED").length;
   const awaitingDispatch = useMemo(() => records.filter((record) => record.status === "PROGRAMMED"), [records]);
-  const today = records.filter((record) => new Date(record.programmedAtMillis).toDateString() === new Date().toDateString()).length;
+  const today = records.filter((record) => siteDayOf(record.programmedAtMillis) === siteDateKey(new Date(serverNow()))).length;
 
   return <>
     <header className="pageCommandHeader"><div><p className="eyebrow">Programming record</p><h1>Programmed trucks</h1><p>Every truck that has left the queue with an imported order and ATC, and whether the refinery has confirmed dispatch.</p></div><span className="queueLiveIndicator"><i />Updates live</span></header>

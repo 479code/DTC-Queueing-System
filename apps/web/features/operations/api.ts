@@ -488,6 +488,7 @@ export type ProgrammedTruckView = {
   programmedAt: string;
   programmedAtMillis: number;
   dispatchConfirmedAt: string;
+  dispatchConfirmedAtMillis: number;
 };
 
 export function subscribeToProgrammedTrucks(
@@ -534,7 +535,8 @@ export function subscribeToProgrammedTrucks(
           batchId: String(data.programmingBatchId ?? ""),
           programmedAt: formatTimestamp(data.programmedAt, true),
           programmedAtMillis: timestampMillis(data.programmedAt),
-          dispatchConfirmedAt: data.dispatchConfirmedAt ? formatTimestamp(data.dispatchConfirmedAt, true) : ""
+          dispatchConfirmedAt: data.dispatchConfirmedAt ? formatTimestamp(data.dispatchConfirmedAt, true) : "",
+          dispatchConfirmedAtMillis: timestampMillis(data.dispatchConfirmedAt)
         } satisfies ProgrammedTruckView;
       }))
         .then(onData)
