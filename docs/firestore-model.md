@@ -10,15 +10,12 @@ sites/{siteId}
   trucks/{truckId}
   queueCycles/{cycleId}
   programmingBatches/{batchId}
+    items/{itemId}
   orderImports/{importId}
   orders/{orderId}
-    items/{itemId}
   bypassRequests/{requestId}
   bypassAuthorizations/{authorizationId}
   insuranceRecords/{insuranceRecordId}
-  dispatchImports/{importId}
-    rows/{rowId}
-  dispatchRecords/{dispatchRecordId}
   auditEvents/{eventId}
   dailyMetrics/{yyyyMMdd}
   notifications/{notificationId}

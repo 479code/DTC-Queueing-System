@@ -111,14 +111,6 @@ export type BypassReasonCategory =
   | "MANAGEMENT_INSTRUCTION"
   | "OTHER";
 
-export type DispatchMatchStatus =
-  | "MATCHED"
-  | "PROGRAMMED_NOT_DISPATCHED"
-  | "DISPATCHED_NOT_PROGRAMMED"
-  | "TRUCK_MISMATCH"
-  | "UNKNOWN_TRUCK"
-  | "DUPLICATE_ROW";
-
 export type AuditEventType =
   | "LOGIN"
   | "USER_CREATED"
@@ -151,10 +143,7 @@ export type AuditEventType =
   | "BYPASS_OTP_VALIDATED"
   | "BYPASS_OTP_FAILED"
   | "BYPASS_OTP_USED"
-  | "DISPATCH_IMPORT_UPLOADED"
-  | "DISPATCH_IMPORT_PROCESSED"
   | "DISPATCH_CONFIRMED"
-  | "DISPATCH_MISMATCH"
   | "RECORD_CORRECTED"
   | "METRIC_RECALCULATED";
 
@@ -317,58 +306,6 @@ export type BypassAuthorization = {
   status: BypassAuthorizationStatus;
 };
 
-export type DispatchImport = {
-  id: string;
-  siteId: string;
-  storagePath: string;
-  originalFileName: string;
-  uploadedBy: string;
-  uploadedAt: TimestampLike;
-  processedAt?: TimestampLike;
-  checksum: string;
-  status: "UPLOADED" | "PROCESSING" | "PROCESSED" | "FAILED";
-  rowsProcessed: number;
-  matchedCount: number;
-  programmedNotDispatchedCount: number;
-  dispatchedNotProgrammedCount: number;
-  truckMismatchCount: number;
-  unknownTruckCount: number;
-  duplicateRowCount: number;
-  errorMessage?: string;
-};
-
-export type DispatchRecord = {
-  id: string;
-  siteId: string;
-  importId: string;
-  sourceRowNumber: number;
-  loadingDate: TimestampLike;
-  customerCode?: string;
-  customerName?: string;
-  product?: string;
-  programmedQuantity?: number;
-  loadedQuantity?: number;
-  transporter?: string;
-  rawTruckPlate: string;
-  normalizedTruckPlate: string;
-  truckId?: string;
-  driverName?: string;
-  terminal?: string;
-  finalDestination?: string;
-  state?: string;
-  atcNo?: string;
-  deliveryNo?: string;
-  salesOrder?: string;
-  contract?: string;
-  matchedQueueCycleId?: string;
-  matchedProgrammingBatchId?: string;
-  matchStatus: DispatchMatchStatus;
-  recordKind: "IMPORT_ROW" | "PROGRAMMING_EXCEPTION";
-  matchReason: string;
-  rawData: Record<string, string | number | boolean | null>;
-  createdAt: TimestampLike;
-};
-
 export type AuditEvent = {
   id: string;
   siteId: string;
@@ -380,8 +317,6 @@ export type AuditEvent = {
   programmingBatchId?: string;
   bypassRequestId?: string;
   bypassAuthorizationId?: string;
-  dispatchImportId?: string;
-  dispatchRecordId?: string;
   relatedRecordPath?: string;
   previousState?: Record<string, unknown>;
   newState?: Record<string, unknown>;

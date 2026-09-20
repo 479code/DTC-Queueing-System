@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  getDocs,
   limit,
   onSnapshot,
   orderBy,
@@ -39,8 +40,8 @@ export type AuditEventView = {
   truckId?: string;
   queueCycleId?: string;
   programmingBatchId?: string;
-  dispatchImportId?: string;
-  dispatchRecordId?: string;
+  truckRegistration?: string;
+  actorName?: string;
   metadata: Record<string, unknown>;
 };
 
@@ -84,7 +85,6 @@ function emptyMetrics(id: string): DailyMetricsView {
 }
 
 export const demoAuditEvents: AuditEventView[] = [
-  { id: "audit-1", eventType: "DISPATCH_MISMATCH", createdAt: "10 Sep, 16:42", createdAtMillis: Date.parse("2026-09-10T16:42:00+01:00"), actorUserId: "Programming Officer", dispatchImportId: "dispatch-demo-20260910", dispatchRecordId: "demo-5", metadata: { matchStatus: "TRUCK_MISMATCH", matchReason: "ATC belongs to a different programmed truck." } },
   { id: "audit-2", eventType: "TRUCK_PROGRAMMED", createdAt: "10 Sep, 15:14", createdAtMillis: Date.parse("2026-09-10T15:14:00+01:00"), actorUserId: "Programming Officer", truckId: "truck-kja-775", programmingBatchId: "PB-20260910-0031", metadata: { selectionType: "FIFO", atcNo: "ATC-240910-041" } },
   { id: "audit-3", eventType: "BYPASS_OTP_USED", createdAt: "10 Sep, 14:57", createdAtMillis: Date.parse("2026-09-10T14:57:00+01:00"), actorUserId: "Programming Officer", truckId: "truck-fze-919", metadata: { selectionType: "BYPASS" } },
   { id: "audit-4", eventType: "INSURANCE_HOLD_APPLIED", createdAt: "10 Sep, 13:32", createdAtMillis: Date.parse("2026-09-10T13:32:00+01:00"), actorUserId: "system:insurance-expiry", truckId: "truck-lsr-718", metadata: { insuranceStatus: "EXPIRED" } },
@@ -142,8 +142,6 @@ function mapAuditEvent(document: QueryDocumentSnapshot<DocumentData>): AuditEven
     truckId: typeof data.truckId === "string" ? data.truckId : undefined,
     queueCycleId: typeof data.queueCycleId === "string" ? data.queueCycleId : undefined,
     programmingBatchId: typeof data.programmingBatchId === "string" ? data.programmingBatchId : undefined,
-    dispatchImportId: typeof data.dispatchImportId === "string" ? data.dispatchImportId : undefined,
-    dispatchRecordId: typeof data.dispatchRecordId === "string" ? data.dispatchRecordId : undefined,
     metadata: typeof data.metadata === "object" && data.metadata !== null ? data.metadata as Record<string, unknown> : {}
   };
 }
@@ -174,9 +172,30 @@ export function subscribeToAuditEvents(
     onData(demoAuditEvents);
     return () => undefined;
   }
+  // An audit log is evidence, so show registrations and names rather than record ids.
+  const names = async (): Promise<{ trucks: Map<string, string>; people: Map<string, string> }> => {
+    const [truckDocs, userDocs] = await Promise.all([
+      getDocs(collection(db!, "sites", siteId, "trucks")).catch(() => null),
+      getDocs(collection(db!, "sites", siteId, "users")).catch(() => null)
+    ]);
+    return {
+      trucks: new Map(truckDocs?.docs.map((item) => [item.id, String(item.data().registrationNumber ?? item.id)]) ?? []),
+      people: new Map(userDocs?.docs.map((item) => [item.id, String(item.data().name ?? item.id)]) ?? [])
+    };
+  };
+  const lookups = names();
   return onSnapshot(
     query(collection(db, "sites", siteId, "auditEvents"), orderBy("createdAt", "desc"), limit(150)),
-    (snapshot) => onData(snapshot.docs.map(mapAuditEvent)),
+    (snapshot) => {
+      void lookups.then(({ trucks, people }) => onData(snapshot.docs.map((document) => {
+        const event = mapAuditEvent(document);
+        return {
+          ...event,
+          truckRegistration: event.truckId ? trucks.get(event.truckId) : undefined,
+          actorName: event.actorUserId === "system" ? "System" : people.get(event.actorUserId)
+        };
+      })));
+    },
     (error) => onError(error.message)
   );
 }
@@ -195,11 +214,11 @@ export function downloadAuditCsv(events: AuditEventView[]): void {
     ...events.map((event) => [
       event.createdAt,
       event.eventType,
-      event.actorUserId,
+      event.actorName ?? event.actorUserId,
       event.truckId ?? "",
       event.queueCycleId ?? "",
       event.programmingBatchId ?? "",
-      event.dispatchImportId ?? "",
+      event.truckRegistration ?? "",
       JSON.stringify(event.metadata)
     ])
   ];

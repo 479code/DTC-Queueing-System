@@ -1,4 +1,4 @@
-import type { DispatchCell } from "../dispatch/reconcile.js";
+import type { SheetCell } from "../shared/sheet.js";
 
 type OrderColumn =
   | "serialNumber"
@@ -54,27 +54,27 @@ export type ParsedOrderRow = {
   rawData: Record<string, string | number | boolean | null>;
 };
 
-function normalizedHeader(value: DispatchCell): string {
+function normalizedHeader(value: SheetCell): string {
   return String(value ?? "").replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
 }
 
-function stringValue(value: DispatchCell): string | undefined {
+function stringValue(value: SheetCell): string | undefined {
   const result = String(value ?? "").trim();
   return result || undefined;
 }
 
-function numberValue(value: DispatchCell): number | undefined {
+function numberValue(value: SheetCell): number | undefined {
   if (typeof value === "number" && Number.isFinite(value)) return value;
   const parsed = Number(String(value ?? "").replaceAll(",", "").trim());
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
-function rawValue(value: DispatchCell): string | number | boolean | null {
+function rawValue(value: SheetCell): string | number | boolean | null {
   if (value instanceof Date) return value.toISOString();
   return value ?? null;
 }
 
-export function parseOrderRows(rows: DispatchCell[][], maxRows = 500): ParsedOrderRow[] {
+export function parseOrderRows(rows: SheetCell[][], maxRows = 500): ParsedOrderRow[] {
   const headerIndex = rows.slice(0, 20).findIndex((row) => {
     const columns = new Set(row.map((cell) => HEADER_ALIASES[normalizedHeader(cell)]).filter(Boolean));
     return columns.has("atcNo") && columns.has("salesOrderNo");
@@ -91,7 +91,7 @@ export function parseOrderRows(rows: DispatchCell[][], maxRows = 500): ParsedOrd
   const rowsWithData = rows.slice(headerIndex + 1).filter((row) => row.some((cell) => stringValue(cell)));
   if (!rowsWithData.length) throw new Error("The workbook does not contain any orders.");
   if (rowsWithData.length > maxRows) throw new Error(`An order import can contain at most ${maxRows} rows.`);
-  const cell = (row: DispatchCell[], column: OrderColumn) => {
+  const cell = (row: SheetCell[], column: OrderColumn) => {
     const index = indexes.get(column);
     return index === undefined ? undefined : row[index];
   };

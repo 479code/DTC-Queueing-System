@@ -13,7 +13,6 @@ import {
   listValidatedBypasses,
   listAvailableOrders,
   previewProgrammingBatch,
-  processDispatchImport,
   processOrderImport,
   provisionUser,
   recalculateDailyMetrics,
@@ -25,13 +24,12 @@ import {
   setUserAccess,
   unregisterDeviceToken,
   updateInsurance,
-  uploadDispatchReport,
   uploadOrderWorkbook,
   startAvailabilityBatch,
   validateBypassOtp,
   auth,
   db,
-  putDispatchObject
+  putWorkbookObject
 } from "@refinery/functions";
 import type { UserRole } from "@refinery/types";
 
@@ -60,8 +58,6 @@ const operations: Record<string, ExecutableOperation> = {
   validateBypassOtp,
   registerDeviceToken,
   unregisterDeviceToken,
-  uploadDispatchReport,
-  processDispatchImport,
   uploadOrderWorkbook,
   processOrderImport,
   listAvailableOrders,
@@ -73,8 +69,8 @@ const operations: Record<string, ExecutableOperation> = {
 const port = Number(process.env.PORT ?? 3001);
 const allowedOrigin = process.env.WEB_ORIGIN;
 const maxBodyBytes = 1_048_576;
-const maxDispatchFileBytes = 20 * 1024 * 1024;
-const dispatchContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+const maxWorkbookFileBytes = 20 * 1024 * 1024;
+const workbookContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 function setCorsHeaders(response: ServerResponse, request: IncomingMessage): void {
   const requestOrigin = request.headers.origin;
@@ -226,28 +222,28 @@ const server = createServer(async (request, response) => {
         !originalFileName.toLowerCase().endsWith(".xlsx") ||
         typeof checksum !== "string" ||
         !/^[a-f0-9]{64}$/i.test(checksum) ||
-        request.headers["content-type"] !== dispatchContentType
+        request.headers["content-type"] !== workbookContentType
       ) {
         throw new ApiError(400, "invalid-argument", "A valid Excel workbook name, checksum, and content type are required.");
       }
 
-      const file = await readBytes(request, maxDispatchFileBytes);
+      const file = await readBytes(request, maxWorkbookFileBytes);
       if (file.length === 0) throw new ApiError(400, "invalid-argument", "The order workbook is empty.");
       const actualChecksum = createHash("sha256").update(file).digest("hex");
       if (actualChecksum !== checksum.toLowerCase()) {
-        throw new ApiError(400, "invalid-argument", "The dispatch workbook checksum does not match its content.");
+        throw new ApiError(400, "invalid-argument", "The order workbook checksum does not match its content.");
       }
 
       const now = new Date();
       const safeName = originalFileName.slice(0, -5).replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 180) || "orders";
       const storagePath = `sites/${siteId}/orders/${now.getUTCFullYear()}/${String(now.getUTCMonth() + 1).padStart(2, "0")}/${importId}/${safeName}.xlsx`;
-      await putDispatchObject(storagePath, file, dispatchContentType, actualChecksum);
+      await putWorkbookObject(storagePath, file, workbookContentType, actualChecksum);
       await uploadOrderWorkbook.execute({
         siteId,
         importId,
         storagePath,
         originalFileName,
-        contentType: dispatchContentType,
+        contentType: workbookContentType,
         fileSize: file.length,
         checksum: actualChecksum
       }, context);

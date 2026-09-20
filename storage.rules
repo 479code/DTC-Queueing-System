@@ -33,7 +33,7 @@ service firebase.storage {
       return hasSite(siteId) && hasRole("administrator");
     }
 
-    match /sites/{siteId}/dispatch/{year}/{month}/{importId}/{fileName} {
+    match /sites/{siteId}/orders/{year}/{month}/{importId}/{fileName} {
       allow read: if canUseDispatch(siteId);
       allow create: if canUploadDispatch(siteId)
         && request.resource.size < 20 * 1024 * 1024

@@ -9,11 +9,19 @@ function eventLabel(eventType: string): string {
 }
 
 function recordReference(event: AuditEventView): string {
-  return event.dispatchImportId ?? event.programmingBatchId ?? event.truckId ?? event.queueCycleId ?? "System record";
+  return event.truckRegistration ?? event.programmingBatchId ?? event.truckId ?? event.queueCycleId ?? "System record";
+}
+
+const isoPattern = /^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/;
+
+function readableValue(value: unknown): string {
+  const text = String(value);
+  if (!isoPattern.test(text)) return text;
+  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(text));
 }
 
 function detail(event: AuditEventView): string {
-  const values = Object.entries(event.metadata).slice(0, 2).map(([key, value]) => `${key.replaceAll("_", " ")}: ${String(value)}`);
+  const values = Object.entries(event.metadata).slice(0, 2).map(([key, value]) => `${key.replaceAll("_", " ")}: ${readableValue(value)}`);
   return values.join(" | ") || "No additional detail";
 }
 
@@ -38,6 +46,6 @@ export function AuditScreen({ siteId, demoMode }: { siteId: string; demoMode: bo
     <header className="auditCommandHeader"><div><p className="eyebrow">Operational record</p><h1>Audit trail</h1><p>Immutable evidence of operational actions, system decisions, and the records they affected.</p></div><button className="secondaryButton commandButton" disabled={visibleEvents.length === 0} onClick={() => downloadAuditCsv(visibleEvents)} type="button"><Download size={16} /> Export CSV</button></header>
     {error ? <p className="message" role="alert">{error}</p> : null}
     <section className="auditStatusStrip" aria-label="Audit status"><div><FileCheck2 size={18} /><span>Recorded events</span><strong>{events.length}</strong></div><i /><div><ShieldCheck size={18} /><span>Record state</span><strong>Immutable</strong></div><i /><div><FileCheck2 size={18} /><span>Event types</span><strong>{eventTypes.length}</strong></div><i /><div><ShieldCheck size={18} /><span>Showing</span><strong>{visibleEvents.length} events</strong></div></section>
-    <section className="dataPanel auditRegisterPanel"><div className="auditRegisterHeading"><div><span>Searchable record</span><h2>Operational events in time order</h2><p>Filter or export the records without changing what the system has captured.</p></div><span>Read only</span></div><div className="tableToolbar auditToolbar"><label className="searchField"><Search size={16} /><span className="visuallyHidden">Search audit log</span><input onChange={(event) => setSearch(event.target.value)} placeholder="Search event, actor, or record" value={search} /></label><select aria-label="Filter audit events" onChange={(event) => setFilter(event.target.value)} value={filter}><option value="ALL">All events</option>{eventTypes.map((eventType) => <option key={eventType} value={eventType}>{eventLabel(eventType)}</option>)}</select><span className="recordCount">{visibleEvents.length} events</span></div><div className="tableScroll"><table className="dataTable auditTable"><thead><tr><th>Time</th><th>Event</th><th>Actor</th><th>Record</th><th>Detail</th></tr></thead><tbody>{visibleEvents.map((event) => <tr key={event.id}><td>{event.createdAt}</td><td><strong>{eventLabel(event.eventType)}</strong></td><td>{event.actorUserId}</td><td>{recordReference(event)}</td><td>{detail(event)}</td></tr>)}</tbody></table>{visibleEvents.length === 0 ? <p className="empty">No audit events match these filters.</p> : null}</div></section>
+    <section className="dataPanel auditRegisterPanel"><div className="auditRegisterHeading"><div><span>Searchable record</span><h2>Operational events in time order</h2><p>Filter or export the records without changing what the system has captured.</p></div><span>Read only</span></div><div className="tableToolbar auditToolbar"><label className="searchField"><Search size={16} /><span className="visuallyHidden">Search audit log</span><input onChange={(event) => setSearch(event.target.value)} placeholder="Search event, actor, or record" value={search} /></label><select aria-label="Filter audit events" onChange={(event) => setFilter(event.target.value)} value={filter}><option value="ALL">All events</option>{eventTypes.map((eventType) => <option key={eventType} value={eventType}>{eventLabel(eventType)}</option>)}</select><span className="recordCount">{visibleEvents.length} events</span></div><div className="tableScroll"><table className="dataTable auditTable"><thead><tr><th>Time</th><th>Event</th><th>Actor</th><th>Record</th><th>Detail</th></tr></thead><tbody>{visibleEvents.map((event) => <tr key={event.id}><td>{event.createdAt}</td><td><strong>{eventLabel(event.eventType)}</strong></td><td>{event.actorName ?? event.actorUserId}</td><td>{recordReference(event)}</td><td>{detail(event)}</td></tr>)}</tbody></table>{visibleEvents.length === 0 ? <p className="empty">No audit events match these filters.</p> : null}</div></section>
   </>;
 }

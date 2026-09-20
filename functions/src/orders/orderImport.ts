@@ -8,7 +8,7 @@ import { db } from "../shared/firebase.js";
 import { failedPrecondition, notFound } from "../shared/errors.js";
 import { orderImportsRef, ordersRef } from "../shared/paths.js";
 import { writeAuditEvent } from "../shared/audit.js";
-import { downloadDispatchObject } from "../dispatch/objectStore.js";
+import { downloadWorkbookObject } from "../shared/objectStore.js";
 import { parseOrderRows } from "./parseOrderRows.js";
 
 export const uploadOrderWorkbook = validatedCall(uploadOrderWorkbookInputSchema, async (data, request) => {
@@ -61,7 +61,7 @@ export const processOrderImport = validatedCall(processOrderImportInputSchema, a
   });
   if (claimed.alreadyProcessed) return { importId: data.importId, status: "PROCESSED" as const, rowsProcessed: Number(claimed.importData.rowsProcessed ?? 0) };
   try {
-    const buffer = await downloadDispatchObject(String(claimed.importData.storagePath ?? ""));
+    const buffer = await downloadWorkbookObject(String(claimed.importData.storagePath ?? ""));
     const checksum = createHash("sha256").update(buffer).digest("hex");
     if (checksum !== claimed.importData.checksum) throw new Error("The spreadsheet checksum changed after upload.");
     const sheet = await readSheet(buffer);

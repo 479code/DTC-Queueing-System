@@ -115,24 +115,6 @@
       ]
     },
     {
-      "collectionGroup": "dispatchRecords",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "siteId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "matchStatus",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "loadingDate",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
       "collectionGroup": "auditEvents",
       "queryScope": "COLLECTION",
       "fields": [

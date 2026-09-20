@@ -106,21 +106,6 @@ service cloud.firestore {
         allow write: if false;
       }
 
-      match /dispatchImports/{importId} {
-        allow read: if isOperationsRole(siteId);
-        allow write: if false;
-
-        match /rows/{rowId} {
-          allow read: if isOperationsRole(siteId);
-          allow write: if false;
-        }
-      }
-
-      match /dispatchRecords/{recordId} {
-        allow read: if isOperationsRole(siteId);
-        allow write: if false;
-      }
-
       match /auditEvents/{eventId} {
         allow read: if hasRole(siteId, "management")
           || hasRole(siteId, "auditor")

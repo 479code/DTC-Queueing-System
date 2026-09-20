@@ -36,7 +36,7 @@ before(async () => {
       ["trucks/truck-other", { registrationNumber: "DEF-456", assignedFleetOfficerId: "fleet-2" }],
       ["queueCycles/cycle-1", { fleetOfficerId: "fleet-1", status: "QUEUED" }],
       ["programmingBatches/batch-1", { status: "CONFIRMED" }],
-      ["dispatchRecords/record-1", { atcNumber: "ATC-001" }],
+      ["orders/order-1", { atcNo: "0472438", status: "AVAILABLE" }],
       ["auditEvents/audit-1", { action: "PROGRAMMING_CONFIRMED" }],
       ["dailyMetrics/20260910", { fifoCompliancePercent: 100 }]
     ];
@@ -75,7 +75,7 @@ test("clients cannot directly write consequential operational records", async ()
   const protectedPaths = [
     "queueCycles/cycle-1",
     "programmingBatches/batch-1",
-    "dispatchRecords/record-1",
+    "orders/order-1",
     "auditEvents/audit-1",
     "dailyMetrics/20260910"
   ];

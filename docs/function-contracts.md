@@ -29,8 +29,7 @@ the migration. Production clients use the Railway endpoint.
 - `approveBypass`
 - `rejectBypass`
 - `validateBypassOtp`
-- `uploadDispatchReport`
-- `processDispatchImport`
+- `confirmTruckDispatch`
 - `uploadOrderWorkbook`
 - `processOrderImport`
 - `listAvailableOrders`

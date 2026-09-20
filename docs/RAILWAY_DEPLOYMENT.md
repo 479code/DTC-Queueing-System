@@ -97,7 +97,7 @@ credentials in a public `NEXT_PUBLIC_` or `EXPO_PUBLIC_` variable.
    `EXPO_PUBLIC_OPERATIONS_API_URL`.
 4. Validate Firebase sign-in and a protected API call with a non-production
 operator account.
-5. Run the return, FIFO, bypass/OTP, programming/ATC, dispatch, and audit
+5. Run the return, FIFO, bypass/OTP, programming/ATC, dispatch confirmation, and audit
 workflow tests.
 6. Configure the Railway Bucket references and validate an `.xlsx` upload through
 the API, including a checksum mismatch rejection.

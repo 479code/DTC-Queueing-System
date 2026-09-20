@@ -133,7 +133,7 @@ export const correctRecordInputSchema = z.object({
   reason: z.string().trim().min(10)
 });
 
-export const uploadDispatchReportInputSchema = z.object({
+export const uploadOrderWorkbookInputSchema = z.object({
   siteId: siteIdSchema,
   importId: documentIdSchema,
   storagePath: z.string().trim().min(1).max(1024),
@@ -143,12 +143,7 @@ export const uploadDispatchReportInputSchema = z.object({
   checksum: z.string().regex(/^[a-f0-9]{64}$/i).transform((value) => value.toLowerCase())
 });
 
-export const processDispatchImportInputSchema = z.object({
-  siteId: siteIdSchema,
-  importId: documentIdSchema
-});
 
-export const uploadOrderWorkbookInputSchema = uploadDispatchReportInputSchema;
 
 export const processOrderImportInputSchema = z.object({
   siteId: siteIdSchema,

@@ -52,7 +52,7 @@ Run the Firestore security-rule tests in an isolated emulator:
 pnpm test:rules
 ```
 
-Run the combined fleet officer, bypass, OTP, programming, dispatch upload, and
+Run the combined fleet officer, bypass, OTP, programming, dispatch confirmation, and
 reconciliation workflow through the Firestore and Storage emulators:
 
 ```bash
@@ -76,7 +76,7 @@ secret override mechanism. Never commit its value.
 ## Railway deployment
 
 The production application uses Railway for the web app, authenticated API, and
-private dispatch-file storage. Firebase remains the source of truth for identity,
+private order-file storage. Firebase remains the source of truth for identity,
 Firestore data, and mobile notifications. See
 [docs/RAILWAY_DEPLOYMENT.md](docs/RAILWAY_DEPLOYMENT.md) for the required
 services, environment variables, and cutover order.

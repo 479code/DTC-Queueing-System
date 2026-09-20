@@ -4,7 +4,7 @@ import {
   PutObjectCommand,
   S3Client
 } from "@aws-sdk/client-s3";
-import { storage } from "../shared/firebase.js";
+import { storage } from "./firebase.js";
 
 const requiredBucketVariables = ["BUCKET", "ACCESS_KEY_ID", "SECRET_ACCESS_KEY", "ENDPOINT"] as const;
 
@@ -32,13 +32,13 @@ function bucketClient(): S3Client {
   return s3Client;
 }
 
-export type DispatchObjectMetadata = {
+export type WorkbookObjectMetadata = {
   contentType?: string;
   fileSize: number;
   checksum?: string;
 };
 
-export async function putDispatchObject(
+export async function putWorkbookObject(
   storagePath: string,
   file: Uint8Array,
   contentType: string,
@@ -57,7 +57,7 @@ export async function putDispatchObject(
   }));
 }
 
-export async function getDispatchObjectMetadata(storagePath: string): Promise<DispatchObjectMetadata | undefined> {
+export async function getWorkbookObjectMetadata(storagePath: string): Promise<WorkbookObjectMetadata | undefined> {
   if (railwayBucketConfigured()) {
     try {
       const metadata = await bucketClient().send(new HeadObjectCommand({
@@ -89,7 +89,7 @@ export async function getDispatchObjectMetadata(storagePath: string): Promise<Di
   };
 }
 
-export async function downloadDispatchObject(storagePath: string): Promise<Buffer> {
+export async function downloadWorkbookObject(storagePath: string): Promise<Buffer> {
   if (railwayBucketConfigured()) {
     const object = await bucketClient().send(new GetObjectCommand({
       Bucket: process.env.BUCKET,
