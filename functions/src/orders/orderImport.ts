@@ -9,7 +9,7 @@ import { failedPrecondition, notFound } from "../shared/errors.js";
 import { orderImportsRef, ordersRef } from "../shared/paths.js";
 import { writeAuditEvent } from "../shared/audit.js";
 import { downloadWorkbookObject } from "../shared/objectStore.js";
-import { parseOrderRows } from "./parseOrderRows.js";
+import { parseOrderRows, type SkippedOrderRow } from "./parseOrderRows.js";
 
 export const uploadOrderWorkbook = validatedCall(uploadOrderWorkbookInputSchema, async (data, request) => {
   const context = requireAuth(request);
@@ -59,17 +59,32 @@ export const processOrderImport = validatedCall(processOrderImportInputSchema, a
     transaction.update(importRef, { status: "PROCESSING", processingStartedAt: FieldValue.serverTimestamp(), errorMessage: FieldValue.delete() });
     return { alreadyProcessed: false, importData };
   });
-  if (claimed.alreadyProcessed) return { importId: data.importId, status: "PROCESSED" as const, rowsProcessed: Number(claimed.importData.rowsProcessed ?? 0) };
+  if (claimed.alreadyProcessed) {
+    return {
+      importId: data.importId,
+      status: "PROCESSED" as const,
+      rowsProcessed: Number(claimed.importData.rowsProcessed ?? 0),
+      rowsSkipped: Number(claimed.importData.rowsSkipped ?? 0),
+      skipped: (Array.isArray(claimed.importData.skippedRows) ? claimed.importData.skippedRows : []) as SkippedOrderRow[]
+    };
+  }
   try {
     const buffer = await downloadWorkbookObject(String(claimed.importData.storagePath ?? ""));
     const checksum = createHash("sha256").update(buffer).digest("hex");
     if (checksum !== claimed.importData.checksum) throw new Error("The spreadsheet checksum changed after upload.");
     const sheet = await readSheet(buffer);
-    const rows = parseOrderRows(sheet as never);
+    const parsed = parseOrderRows(sheet as never);
     const existing = await ordersRef(data.siteId).get();
     const existingAtcs = new Set(existing.docs.map((document) => String(document.data().atcNo ?? "").toUpperCase()));
-    const duplicate = rows.find((row) => existingAtcs.has(row.atcNo));
-    if (duplicate) throw new Error(`ATC ${duplicate.atcNo} has already been imported.`);
+    // An ATC already on the system is not a broken file; it is simply one we
+    // already have, so it is set aside and the rest of the file still lands.
+    const skipped = [...parsed.skipped];
+    const rows = parsed.rows.filter((row) => {
+      if (!existingAtcs.has(row.atcNo)) return true;
+      skipped.push({ sourceRowNumber: row.sourceRowNumber, atcNo: row.atcNo, reason: "Already imported previously" });
+      return false;
+    });
+    skipped.sort((left, right) => left.sourceRowNumber - right.sourceRowNumber);
     const writer = db.bulkWriter();
     rows.forEach((row) => {
       const orderRef = ordersRef(data.siteId).doc();
@@ -84,17 +99,23 @@ export const processOrderImport = validatedCall(processOrderImportInputSchema, a
     });
     await writer.close();
     await db.runTransaction(async (transaction) => {
-      transaction.update(importRef, { status: "PROCESSED", rowsProcessed: rows.length, processedAt: FieldValue.serverTimestamp() });
+      transaction.update(importRef, {
+        status: "PROCESSED",
+        rowsProcessed: rows.length,
+        rowsSkipped: skipped.length,
+        skippedRows: skipped.slice(0, 100),
+        processedAt: FieldValue.serverTimestamp()
+      });
       writeAuditEvent(transaction, {
         siteId: data.siteId,
         eventType: "ORDER_IMPORT_PROCESSED",
         actorUserId: context.uid,
         actorRoles: context.roles,
         relatedRecordPath: importRef.path,
-        metadata: { rowsProcessed: rows.length }
+        metadata: { rowsProcessed: rows.length, rowsSkipped: skipped.length }
       });
     });
-    return { importId: data.importId, status: "PROCESSED" as const, rowsProcessed: rows.length };
+    return { importId: data.importId, status: "PROCESSED" as const, rowsProcessed: rows.length, rowsSkipped: skipped.length, skipped };
   } catch (error) {
     const message = error instanceof Error ? error.message : "The order workbook could not be processed.";
     await importRef.set({ status: "FAILED", errorMessage: message, processedAt: FieldValue.serverTimestamp() }, { merge: true });

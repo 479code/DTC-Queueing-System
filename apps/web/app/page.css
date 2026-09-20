@@ -1172,3 +1172,21 @@ a.accessSubmit { text-decoration: none; }
 /* One footer block: who is signed in, sign out, then the environment line. */
 .accountState { margin-top: auto; }
 .environmentState { margin-top: 12px; }
+
+/* An import that partly succeeded: the outcome first, the set-aside rows under it. */
+.importReport { background: #e7f6ed; border: 1px solid #b9dfc7; border-radius: 6px; margin: 0 0 18px; padding: 12px 14px; }
+.importReport.hasSkipped { background: var(--warning-soft); border-color: #eccf94; }
+.importHeadline { color: #176b3c; font-size: 13px; font-weight: 600; margin: 0; }
+.importReport.hasSkipped .importHeadline { color: #8a5d11; }
+.importSkippedIntro { color: #8a5d11; font-size: 12px; margin: 8px 0 0; }
+.importSkippedList { display: grid; gap: 4px; list-style: none; margin: 10px 0 0; max-height: 192px; overflow-y: auto; padding: 0; }
+.importSkippedList li { align-items: baseline; display: grid; font-size: 12px; gap: 10px; grid-template-columns: 64px 96px minmax(0, 1fr); }
+.importSkippedRow { color: var(--muted); font-variant-numeric: tabular-nums; }
+.importSkippedAtc { color: var(--text); font-variant-numeric: tabular-nums; font-weight: 600; }
+.importSkippedReason { color: #8a5d11; }
+.importReport .secondaryButton { margin-top: 12px; }
+
+@media (max-width: 720px) {
+  .importSkippedList li { grid-template-columns: 56px minmax(0, 1fr); }
+  .importSkippedReason { grid-column: 1 / -1; }
+}

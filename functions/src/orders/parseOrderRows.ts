@@ -74,7 +74,24 @@ function rawValue(value: SheetCell): string | number | boolean | null {
   return value ?? null;
 }
 
-export function parseOrderRows(rows: SheetCell[][], maxRows = 500): ParsedOrderRow[] {
+/** A row we could not use, and the plain reason why, for the officer to read. */
+export type SkippedOrderRow = {
+  sourceRowNumber: number;
+  atcNo?: string;
+  reason: string;
+};
+
+export type ParsedOrderSheet = {
+  rows: ParsedOrderRow[];
+  skipped: SkippedOrderRow[];
+};
+
+/**
+ * One bad row should not cost an officer the other nineteen, so a row that
+ * cannot be used is set aside with a reason rather than failing the file.
+ * Only a workbook we cannot read at all is rejected outright.
+ */
+export function parseOrderRows(rows: SheetCell[][], maxRows = 500): ParsedOrderSheet {
   const headerIndex = rows.slice(0, 20).findIndex((row) => {
     const columns = new Set(row.map((cell) => HEADER_ALIASES[normalizedHeader(cell)]).filter(Boolean));
     return columns.has("atcNo") && columns.has("salesOrderNo");
@@ -95,16 +112,29 @@ export function parseOrderRows(rows: SheetCell[][], maxRows = 500): ParsedOrderR
     const index = indexes.get(column);
     return index === undefined ? undefined : row[index];
   };
-  const seenAtcs = new Set<string>();
-  return rowsWithData.map((row, index) => {
+  const seenAtcs = new Map<string, number>();
+  const skipped: SkippedOrderRow[] = [];
+  const parsed: ParsedOrderRow[] = [];
+
+  rowsWithData.forEach((row, index) => {
     const sourceRowNumber = headerIndex + index + 2;
     const atcNo = stringValue(cell(row, "atcNo"))?.toUpperCase();
     const salesOrderNo = stringValue(cell(row, "salesOrderNo"));
-    if (!atcNo) throw new Error(`Row ${sourceRowNumber} is missing ATC NO.`);
-    if (!salesOrderNo) throw new Error(`Row ${sourceRowNumber} is missing SALES ORDER NO.`);
-    if (seenAtcs.has(atcNo)) throw new Error(`ATC ${atcNo} appears more than once in this workbook.`);
-    seenAtcs.add(atcNo);
-    return {
+    if (!atcNo) {
+      skipped.push({ sourceRowNumber, reason: "No ATC number" });
+      return;
+    }
+    if (!salesOrderNo) {
+      skipped.push({ sourceRowNumber, atcNo, reason: "No sales order number" });
+      return;
+    }
+    const firstSeenAt = seenAtcs.get(atcNo);
+    if (firstSeenAt !== undefined) {
+      skipped.push({ sourceRowNumber, atcNo, reason: `Repeated in this file (row ${firstSeenAt} was kept)` });
+      return;
+    }
+    seenAtcs.set(atcNo, sourceRowNumber);
+    parsed.push({
       sourceRowNumber,
       atcNo,
       salesOrderNo,
@@ -121,6 +151,8 @@ export function parseOrderRows(rows: SheetCell[][], maxRows = 500): ParsedOrderR
         String(header ?? `Column ${columnIndex + 1}`).trim() || `Column ${columnIndex + 1}`,
         rawValue(row[columnIndex])
       ]))
-    };
+    });
   });
+
+  return { rows: parsed, skipped };
 }
