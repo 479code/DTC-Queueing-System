@@ -43,8 +43,7 @@ export const setUserAccess = validatedCall(
         : [];
       const accessChanged = !current.exists
         || previous.isActive !== data.isActive
-        || !sameRoles(previousRoles, data.roles)
-        || previous.mfaRequired !== data.mfaRequired;
+        || !sameRoles(previousRoles, data.roles);
 
       if (current.exists && previous.siteId !== data.siteId) {
         failedPrecondition("User access cannot be moved between sites through this operation.");
@@ -57,7 +56,6 @@ export const setUserAccess = validatedCall(
         name: data.name,
         roles: data.roles,
         isActive: data.isActive,
-        mfaRequired: data.mfaRequired,
         updatedAt: FieldValue.serverTimestamp(),
         ...(email ? { email } : {})
       };
@@ -80,12 +78,10 @@ export const setUserAccess = validatedCall(
         previousState: current.exists ? {
           roles: previousRoles,
           isActive: previous.isActive,
-          mfaRequired: previous.mfaRequired
         } : undefined,
         newState: {
           roles: data.roles,
           isActive: data.isActive,
-          mfaRequired: data.mfaRequired
         },
         metadata: { userId: data.userId, accessChanged }
       });

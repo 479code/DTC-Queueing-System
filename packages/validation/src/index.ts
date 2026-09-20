@@ -172,8 +172,7 @@ export const setUserAccessInputSchema = z.object({
     "auditor",
     "administrator"
   ])).min(1).max(6),
-  isActive: z.boolean(),
-  mfaRequired: z.boolean().default(false)
+  isActive: z.boolean()
 });
 
 export const provisionUserInputSchema = z.object({
@@ -187,6 +186,5 @@ export const provisionUserInputSchema = z.object({
     "management",
     "auditor",
     "administrator"
-  ])).min(1).max(6),
-  mfaRequired: z.boolean().default(false)
+  ])).min(1).max(6)
 });

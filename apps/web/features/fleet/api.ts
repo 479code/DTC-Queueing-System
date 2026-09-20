@@ -2,6 +2,7 @@ import { collection, onSnapshot, query, where, type Unsubscribe } from "firebase
 import { auth, db, functions } from "../../firebase/client";
 import { callOperationalApi } from "../../firebase/operations";
 import type { InsuranceStatus, TruckStatus } from "../operations/api";
+import { formatSiteTime } from "../../lib/time";
 
 export async function reportFleetReturn(input: { siteId: string; truckId: string; insuranceStatus: InsuranceStatus }): Promise<{
   cycleId: string;
@@ -45,7 +46,7 @@ function requestTime(value: unknown): { text: string; millis: number } {
   if (typeof value === "object" && value !== null && "toDate" in value && typeof value.toDate === "function") {
     const date = (value as { toDate: () => Date }).toDate();
     return {
-      text: new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(date),
+      text: formatSiteTime(date),
       millis: date.getTime()
     };
   }

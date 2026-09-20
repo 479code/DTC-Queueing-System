@@ -14,6 +14,7 @@ import {
 } from "firebase/firestore";
 import { auth, db, functions } from "../../firebase/client";
 import { callOperationalApi } from "../../firebase/operations";
+import { formatSiteTime } from "../../lib/time";
 
 export type InsuranceStatus = "VALID" | "EXPIRING_SOON" | "EXPIRED" | "UNKNOWN";
 export type TruckStatus = "ON_TRIP" | "QUEUED" | "AWAITING_AVAILABILITY" | "READY_FOR_PROGRAMMING" | "AWAITING_REPLACEMENT" | "INSURANCE_HOLD" | "PROGRAMMED" | "INACTIVE";
@@ -122,13 +123,7 @@ export const demoQueue: QueueEntryView[] = queueSeed.map((entry, index) => {
     registrationNumber: entry[1],
     driverName: entry[2],
     fleetOfficerName: entry[3],
-    queueEnteredAt: new Intl.DateTimeFormat("en-GB", {
-      day: "2-digit",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false
-    }).format(queueEnteredAtMillis),
+    queueEnteredAt: formatSiteTime(new Date(queueEnteredAtMillis)),
     queueEnteredAtMillis,
     insuranceStatus: index === 1 ? "EXPIRING_SOON" : "VALID"
   };
@@ -145,22 +140,8 @@ export const demoBypassOption: ValidatedBypassOption = {
 };
 
 function formatTimestamp(value: unknown, includeTime = false): string {
-  if (
-    typeof value === "object" &&
-    value !== null &&
-    "toDate" in value &&
-    typeof value.toDate === "function"
-  ) {
-    return new Intl.DateTimeFormat("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: includeTime ? undefined : "numeric",
-      hour: includeTime ? "2-digit" : undefined,
-      minute: includeTime ? "2-digit" : undefined,
-      hour12: false
-    }).format(value.toDate());
-  }
-  return "Not recorded";
+  // Refinery time, whatever the device is set to. See lib/time.ts.
+  return formatSiteTime(value, includeTime);
 }
 
 function timestampMillis(value: unknown): number {

@@ -12,6 +12,7 @@ export function ProgrammedScreen({ siteId, canConfirmDispatch }: { siteId: strin
   const [queryText, setQueryText] = useState("");
   const [filter, setFilter] = useState("ALL");
   const [message, setMessage] = useState("");
+  const [loaded, setLoaded] = useState(false);
   const [confirming, setConfirming] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -27,7 +28,7 @@ export function ProgrammedScreen({ siteId, canConfirmDispatch }: { siteId: strin
     }
   };
 
-  useEffect(() => subscribeToProgrammedTrucks(siteId, (data) => { setRecords(data); setMessage(""); }, setMessage), [siteId]);
+  useEffect(() => subscribeToProgrammedTrucks(siteId, (data) => { setRecords(data); setMessage(""); setLoaded(true); }, (error) => { setMessage(error); setLoaded(true); }), [siteId]);
 
   const visible = useMemo(() => records
     .filter((record) => filter === "ALL" || record.status === filter)
@@ -90,7 +91,7 @@ export function ProgrammedScreen({ siteId, canConfirmDispatch }: { siteId: strin
           {canConfirmDispatch ? <td data-col="actions">{record.status === "PROGRAMMED" ? <button className="primaryButton" disabled={confirming !== ""} onClick={() => void confirmDispatch(record)} type="button">{confirming === record.id ? "Recording..." : "Confirm dispatch"}</button> : null}</td> : null}
         </tr>)}
         </Fragment>)}</tbody>
-      </table>{visible.length === 0 ? <p className="empty">No truck has been programmed yet.</p> : null}</div>
+      </table>{visible.length === 0 ? <p className={loaded ? "empty" : "loadingLine"}>{loaded ? "No truck has been programmed yet." : "Loading the programming record..."}</p> : null}</div>
     </section>
   </>;
 }

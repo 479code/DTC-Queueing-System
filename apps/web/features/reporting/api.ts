@@ -3,6 +3,8 @@ import {
   doc,
   getDocs,
   limit,
+  startAfter,
+  Timestamp,
   onSnapshot,
   orderBy,
   query,
@@ -11,7 +13,10 @@ import {
   type Unsubscribe
 } from "firebase/firestore";
 import { auth, db, functions } from "../../firebase/client";
+
+export const AUDIT_PAGE_SIZE = 100;
 import { callOperationalApi } from "../../firebase/operations";
+import { formatSiteTime, siteDateKey } from "../../lib/time";
 
 export type DailyMetricsView = {
   id: string;
@@ -92,10 +97,7 @@ export const demoAuditEvents: AuditEventView[] = [
 ];
 
 export function metricIdForToday(): string {
-  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Africa/Lagos", year: "numeric", month: "2-digit", day: "2-digit"
-  }).formatToParts(new Date()).map((part) => [part.type, part.value]));
-  return `${parts.year}${parts.month}${parts.day}`;
+  return siteDateKey();
 }
 
 function timestampMillis(value: unknown): number {
@@ -105,10 +107,7 @@ function timestampMillis(value: unknown): number {
 }
 
 function formatTimestamp(value: unknown): string {
-  if (typeof value !== "object" || value === null || !("toDate" in value) || typeof value.toDate !== "function") return "Not recorded";
-  return new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: false
-  }).format(value.toDate());
+  return formatSiteTime(value);
 }
 
 function mapMetrics(data: DocumentData, fallbackId: string): DailyMetricsView {
@@ -185,7 +184,7 @@ export function subscribeToAuditEvents(
   };
   const lookups = names();
   return onSnapshot(
-    query(collection(db, "sites", siteId, "auditEvents"), orderBy("createdAt", "desc"), limit(150)),
+    query(collection(db, "sites", siteId, "auditEvents"), orderBy("createdAt", "desc"), limit(AUDIT_PAGE_SIZE)),
     (snapshot) => {
       void lookups.then(({ trucks, people }) => onData(snapshot.docs.map((document) => {
         const event = mapAuditEvent(document);
@@ -198,6 +197,37 @@ export function subscribeToAuditEvents(
     },
     (error) => onError(error.message)
   );
+}
+
+/**
+ * Older events, a page at a time. The live subscription only carries the newest
+ * page; an auditor asking "what happened last week" needs the rest.
+ */
+export async function loadOlderAuditEvents(
+  siteId: string,
+  before: number
+): Promise<AuditEventView[]> {
+  if (!db || !auth?.currentUser || !before) return [];
+  const snapshot = await getDocs(query(
+    collection(db, "sites", siteId, "auditEvents"),
+    orderBy("createdAt", "desc"),
+    startAfter(Timestamp.fromMillis(before)),
+    limit(AUDIT_PAGE_SIZE)
+  ));
+  const [truckDocs, userDocs] = await Promise.all([
+    getDocs(collection(db, "sites", siteId, "trucks")).catch(() => null),
+    getDocs(collection(db, "sites", siteId, "users")).catch(() => null)
+  ]);
+  const trucks = new Map(truckDocs?.docs.map((item) => [item.id, String(item.data().registrationNumber ?? item.id)]) ?? []);
+  const people = new Map(userDocs?.docs.map((item) => [item.id, String(item.data().name ?? item.id)]) ?? []);
+  return snapshot.docs.map((document) => {
+    const event = mapAuditEvent(document);
+    return {
+      ...event,
+      truckRegistration: event.truckId ? trucks.get(event.truckId) : undefined,
+      actorName: event.actorUserId === "system" ? "System" : people.get(event.actorUserId)
+    };
+  });
 }
 
 export async function recalculateMetrics(siteId: string, demoMode: boolean): Promise<DailyMetricsView> {

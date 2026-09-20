@@ -4,6 +4,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import { AlertTriangle, CalendarClock, ListOrdered, ShieldCheck, Truck } from "lucide-react";
 import { updateInsurance, type TruckView } from "./api";
 import { Dialog, StatusBadge } from "./ui";
+import { formatSiteTime } from "../../lib/time";
 
 type Props = {
   siteId: string;
@@ -39,7 +40,7 @@ export function InsuranceScreen({ siteId, trucks, demoMode, onTrucksChange }: Pr
         onTrucksChange(trucks.map((truck) => truck.id === selected.id ? {
           ...truck,
           insuranceStatus: result.status,
-          insuranceExpiry: new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(form.expiryDate)),
+          insuranceExpiry: formatSiteTime(new Date(form.expiryDate), false),
           currentStatus: result.queueReentered && truck.currentStatus === "INSURANCE_HOLD" ? "QUEUED" : truck.currentStatus
         } : truck));
       }

@@ -182,7 +182,6 @@ async function bootstrapInitialAdministrator(): Promise<void> {
     ...(authUser.email ? { email: authUser.email } : {}),
     roles,
     isActive: true,
-    mfaRequired: false,
     updatedAt: now,
     ...(profileSnapshot.exists ? {} : { createdAt: now })
   }, { merge: true });

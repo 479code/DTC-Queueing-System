@@ -3,6 +3,7 @@ import { httpsCallable } from "firebase/functions";
 import { ref, uploadBytes } from "firebase/storage";
 import { auth, db, functions, storage } from "../../firebase/client";
 import { uploadOrderWorkbook, usesRailwayOperations } from "../../firebase/operations";
+import { formatSiteTime } from "../../lib/time";
 
 export type OrderImportView = { id: string; originalFileName: string; status: string; rowsProcessed: number; uploadedAt: string };
 export type OrderView = { id: string; atcNo: string; salesOrderNo: string; dprpCustomerName: string; receivingCustomerName: string; state: string; volume?: number; expectedDeliveryDate: string; status: string };
@@ -14,9 +15,7 @@ const demoOrders: OrderView[] = [
 ];
 
 function dateText(value: unknown): string {
-  return typeof value === "object" && value !== null && "toDate" in value && typeof value.toDate === "function"
-    ? new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: false }).format(value.toDate())
-    : "Not recorded";
+  return formatSiteTime(value);
 }
 function mapImport(document: QueryDocumentSnapshot<DocumentData>): OrderImportView {
   const data = document.data();

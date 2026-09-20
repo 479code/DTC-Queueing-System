@@ -43,7 +43,6 @@ export const provisionUser = validatedCall(
           email: data.email,
           roles: data.roles,
           isActive: true,
-          mfaRequired: data.mfaRequired,
           createdAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp()
         });
@@ -55,8 +54,7 @@ export const provisionUser = validatedCall(
           relatedRecordPath: userRef.path,
           newState: {
             roles: data.roles,
-            isActive: true,
-            mfaRequired: data.mfaRequired
+            isActive: true
           },
           metadata: { userId: authUser.uid, email: data.email }
         });

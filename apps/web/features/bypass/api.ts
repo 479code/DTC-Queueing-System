@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 import { auth, db, functions } from "../../firebase/client";
 import { callOperationalApi } from "../../firebase/operations";
+import { formatSiteTime } from "../../lib/time";
 
 export type BypassRequestView = {
   id: string;
@@ -96,19 +97,8 @@ function formatReason(value: string): string {
 }
 
 function formatTimestamp(value: unknown): string {
-  if (
-    typeof value === "object" &&
-    value !== null &&
-    "toDate" in value &&
-    typeof value.toDate === "function"
-  ) {
-    return new Intl.DateTimeFormat("en-GB", {
-      day: "2-digit",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false
-    }).format(value.toDate());
+  if (typeof value === "object" && value !== null && "toDate" in value && typeof value.toDate === "function") {
+    return formatSiteTime(value);
   }
 
   return "Pending";

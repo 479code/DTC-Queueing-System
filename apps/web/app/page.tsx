@@ -43,6 +43,7 @@ import {
 } from "../features/operations/api";
 import { InsuranceScreen } from "../features/operations/InsuranceScreen";
 import { BypassWorkspace } from "../features/fleet/BypassWorkspace";
+import { NotificationBell } from "../features/shell/NotificationBell";
 import { ProgrammedScreen } from "../features/operations/ProgrammedScreen";
 import { ProgrammingScreen } from "../features/operations/ProgrammingScreen";
 import { QueueScreen } from "../features/operations/QueueScreen";
@@ -201,6 +202,11 @@ export default function Page() {
   const visibleNavigation = isDemoExperience
     ? navigation
     : navigation.filter((item) => visibleViewsForRoles(roles).includes(item.id));
+  // Opening a page your role cannot see should say so, not silently redirect.
+  const deniedView = !isDemoExperience && view !== "preview" && navigation.some((item) => item.id === view)
+    && !visibleNavigation.some((item) => item.id === view)
+    ? navigation.find((item) => item.id === view)?.label ?? ""
+    : "";
   const activeView = visibleNavigation.some((item) => item.id === view)
     ? view
     : visibleNavigation[0]?.id ?? "overview";
@@ -235,6 +241,7 @@ export default function Page() {
           <div className="accountIdentity">
             <span className="accountAvatar" aria-hidden="true">{(userEmail || "?").slice(0, 1).toUpperCase()}</span>
             <div><strong>{userEmail || "Signed-in staff"}</strong><small>{roles.map((role) => role.replace(/([A-Z])/g, " $1").replace(/^./, (value) => value.toUpperCase())).join(", ")}</small></div>
+            <NotificationBell siteId={siteId} userId={userId} />
           </div>
           <button className="signOutButton" onClick={() => { if (auth) void signOut(auth); }} type="button"><LogOut size={15} />Sign out</button>
         </div> : null}
@@ -243,6 +250,7 @@ export default function Page() {
 
       <section className="content">
         {dataMessage ? <p className="connectionMessage">{dataMessage}</p> : null}
+        {deniedView ? <p className="accessDeniedNote" role="status">{deniedView} is not part of your access. Showing {visibleNavigation[0]?.label ?? "your workspace"} instead.</p> : null}
         {activeView === "my-bypass" ? <BypassWorkspace fleetOfficerId={userId} queue={queue} siteId={siteId} trucks={trucks} /> : null}
         {activeView === "my-fleet" ? <FleetWorkspace demoMode={demoMode} fleetOfficerId={userId} onTrucksChange={setTrucks} queue={queue} siteId={siteId} trucks={trucks} /> : null}
         {activeView === "overview" ? <OverviewScreen canViewAuditEvents={isDemoExperience || roles.some((role) => ["management", "auditor", "administrator"].includes(role))} canRecalculate={isDemoExperience || roles.some((role) => ["management", "administrator"].includes(role))} demoMode={demoMode} queue={queue} siteId={siteId} trucks={trucks} /> : null}

@@ -6,6 +6,7 @@ import { confirmAvailability, type QueueEntryView, type TruckView } from "../ope
 import { Dialog, StatusBadge } from "../operations/ui";
 import { groupByStatus } from "../operations/grouping";
 import { WorkList } from "../operations/WorkList";
+import { serverNow, syncClockOffset } from "../../lib/time";
 import { reportFleetReturn } from "./api";
 
 export function FleetWorkspace({
@@ -25,13 +26,14 @@ export function FleetWorkspace({
 }) {
   const [working, setWorking] = useState(false);
   const [message, setMessage] = useState("");
-  const [nowMillis, setNowMillis] = useState(() => Date.now());
+  const [nowMillis, setNowMillis] = useState(() => serverNow());
 
 
 
   // Keep the one-hour availability countdown moving without reloading the page.
   useEffect(() => {
-    const timer = window.setInterval(() => setNowMillis(Date.now()), 1000);
+    void syncClockOffset().then(() => setNowMillis(serverNow()));
+    const timer = window.setInterval(() => setNowMillis(serverNow()), 1000);
     return () => window.clearInterval(timer);
   }, []);
 

@@ -4,8 +4,8 @@ import type { UserRole } from "@refinery/types";
 import { auth, db } from "../../firebase/client";
 import { callOperationalApi } from "../../firebase/operations";
 
-export type StaffAccessView = { id: string; name: string; email: string; roles: UserRole[]; isActive: boolean; mfaRequired: boolean };
-type StaffAccessInput = { name: string; email: string; roles: UserRole[]; isActive: boolean; mfaRequired: boolean };
+export type StaffAccessView = { id: string; name: string; email: string; roles: UserRole[]; isActive: boolean };
+type StaffAccessInput = { name: string; email: string; roles: UserRole[]; isActive: boolean };
 
 function mapStaffUser(snapshot: QueryDocumentSnapshot<DocumentData>): StaffAccessView {
   const data = snapshot.data();
@@ -15,7 +15,6 @@ function mapStaffUser(snapshot: QueryDocumentSnapshot<DocumentData>): StaffAcces
     email: String(data.email ?? ""),
     roles: Array.isArray(data.roles) ? data.roles.filter((role): role is UserRole => typeof role === "string") : [],
     isActive: data.isActive === true,
-    mfaRequired: data.mfaRequired === true
   };
 }
 

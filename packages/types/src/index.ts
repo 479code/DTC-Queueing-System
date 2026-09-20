@@ -175,7 +175,6 @@ export type AppUser = {
   roles: UserRole[];
   fleetOfficerId?: string;
   isActive: boolean;
-  mfaRequired: boolean;
   createdAt: TimestampLike;
   updatedAt: TimestampLike;
 };
