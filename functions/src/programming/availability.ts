@@ -160,6 +160,11 @@ export async function expireAvailabilityRequests(now = Timestamp.now()): Promise
       const [freshItem, cycleSnapshot, batchSnapshot] = await Promise.all([transaction.get(itemRef), transaction.get(cycleRef), transaction.get(batchRef)]);
       if (!freshItem.exists || !cycleSnapshot.exists) return false;
       const batchIsOpen = batchSnapshot.data()?.status === "AWAITING_AVAILABILITY";
+      // Read the rest of the batch now, so we can tell afterwards whether this
+      // run still has anything left to wait for or to program.
+      const siblingItems = await transaction.get(batchRef.collection("items"));
+      const otherPending = siblingItems.docs.filter((sibling) => sibling.id !== item.id && sibling.data().availabilityStatus === "PENDING").length;
+      const anyConfirmed = siblingItems.docs.some((sibling) => sibling.data().availabilityStatus === "CONFIRMED");
       const current = freshItem.data() ?? {};
       if (current.availabilityStatus !== "PENDING" || timestamp(current.availabilityExpiresAt, "availability expiry").toMillis() > now.toMillis()) return false;
       const truckRef = trucksRef(siteId).doc(String(current.truckId));
@@ -199,7 +204,15 @@ export async function expireAvailabilityRequests(now = Timestamp.now()): Promise
       });
       writeAuditEvent(transaction, { siteId, eventType: "AVAILABILITY_EXPIRED", actorUserId: "system", actorRoles: ["administrator"], truckId: String(current.truckId), queueCycleId, programmingBatchId: batchId });
       writeAuditEvent(transaction, { siteId, eventType: "QUEUE_REENTERED_AFTER_TIMEOUT", actorUserId: "system", actorRoles: ["administrator"], truckId: String(current.truckId), queueCycleId, programmingBatchId: batchId });
-      if (!batchIsOpen || !replacement || !replacementTruckRef || !replacementTruck) return true;
+      if (!batchIsOpen || !replacement || !replacementTruckRef || !replacementTruck) {
+        // Nobody left to ask and nobody confirmed: the run is over, so close it
+        // rather than leaving the officer holding a batch that can never finish.
+        if (batchIsOpen && !otherPending && !anyConfirmed) {
+          transaction.update(batchRef, { status: "EXPIRED", closedAt: FieldValue.serverTimestamp() });
+          writeAuditEvent(transaction, { siteId, eventType: "PROGRAMMING_BATCH_EXPIRED", actorUserId: "system", actorRoles: ["administrator"], programmingBatchId: batchId, metadata: { reason: "No truck confirmed availability." } });
+        }
+        return true;
+      }
       const replacementData = replacement.data();
       const replacementItemRef = batchRef.collection("items").doc();
       const expiresAt = Timestamp.fromMillis(now.toMillis() + availabilityWindowMs);
@@ -260,6 +273,38 @@ export async function requeueStrandedReplacements(): Promise<number> {
         truckId,
         queueCycleId: cycle.id,
         metadata: { reason: "Returned to the queue after waiting on a replacement that never came." }
+      });
+      return true;
+    });
+    if (changed) count += 1;
+  }
+  return count;
+}
+
+/**
+ * A run where every truck's window expired can never be programmed, and the
+ * officer's screen keeps restoring it. Close the ones already left open.
+ */
+export async function closeFinishedAvailabilityBatches(): Promise<number> {
+  const open = await db.collectionGroup("programmingBatches").where("status", "==", "AWAITING_AVAILABILITY").limit(50).get();
+  let count = 0;
+  for (const batch of open.docs) {
+    const siteId = String(batch.data().siteId ?? "");
+    if (!siteId) continue;
+    const items = await batch.ref.collection("items").get();
+    const statuses = items.docs.map((item) => String(item.data().availabilityStatus));
+    if (!statuses.length || statuses.some((status) => status === "PENDING" || status === "CONFIRMED")) continue;
+    const changed = await db.runTransaction(async (transaction) => {
+      const fresh = await transaction.get(batch.ref);
+      if (fresh.data()?.status !== "AWAITING_AVAILABILITY") return false;
+      transaction.update(batch.ref, { status: "EXPIRED", closedAt: FieldValue.serverTimestamp() });
+      writeAuditEvent(transaction, {
+        siteId,
+        eventType: "PROGRAMMING_BATCH_EXPIRED",
+        actorUserId: "system",
+        actorRoles: ["administrator"],
+        programmingBatchId: batch.id,
+        metadata: { reason: "No truck confirmed availability." }
       });
       return true;
     });

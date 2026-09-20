@@ -111,3 +111,22 @@ test("a file with nothing usable reports every row rather than throwing", () => 
 test("a workbook without the required columns is still rejected outright", () => {
   assert.throws(() => parseOrderRows([["S/N", "Customer"], [1, "SUS Oil"]]), /ATC NO and SALES ORDER NO/);
 });
+
+test("a missing optional column leaves the field off rather than writing undefined", () => {
+  const result = parseOrderRows([["S/N", "ATC NO", "SALES ORDER NO"], [1, "0472438", "3100458812"]]);
+  const row = result.rows[0];
+
+  assert.equal(row.expectedDeliveryDate, undefined);
+  const present = Object.fromEntries(Object.entries(row).filter(([, value]) => value !== undefined));
+  assert.ok(!("expectedDeliveryDate" in present), "Firestore rejects an undefined value outright");
+  assert.ok(!Object.values(present).includes(undefined));
+});
+
+test("a spreadsheet date cell is stored as a readable date, not a Date toString", () => {
+  const result = parseOrderRows([
+    ["S/N", "ATC NO", "SALES ORDER NO", "EXPECTED DELIVERY DATE"],
+    [1, "0472438", "3100458812", new Date(Date.UTC(2026, 8, 22))]
+  ]);
+
+  assert.equal(result.rows[0].expectedDeliveryDate, "22 Sept 2026");
+});

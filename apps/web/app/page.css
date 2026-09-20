@@ -1190,3 +1190,6 @@ a.accessSubmit { text-decoration: none; }
   .importSkippedList li { grid-template-columns: 56px minmax(0, 1fr); }
   .importSkippedReason { grid-column: 1 / -1; }
 }
+
+/* Trucks that missed their hour: named once, not left as dead rows. */
+.availabilityExpiredNote { color: var(--muted); font-size: 12px; line-height: 1.5; margin: 10px 0 0; }

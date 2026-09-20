@@ -3,7 +3,7 @@ import test from "node:test";
 
 const { Timestamp } = await import("firebase-admin/firestore");
 const { db } = await import("../lib/shared/firebase.js");
-const { startAvailabilityBatch, confirmTruckAvailability, expireAvailabilityRequests, requeueStrandedReplacements } = await import("../lib/programming/availability.js");
+const { startAvailabilityBatch, confirmTruckAvailability, expireAvailabilityRequests, requeueStrandedReplacements, closeFinishedAvailabilityBatches } = await import("../lib/programming/availability.js");
 const { confirmProgrammingWithOrders } = await import("../lib/programming/confirmProgrammingWithOrders.js");
 const { confirmTruckDispatch } = await import("../lib/dispatch/confirmTruckDispatch.js");
 
@@ -118,6 +118,37 @@ test("a truck whose window expires with nobody left to replace it still returns 
   assert.equal(after.data()?.status, "QUEUED", "with no replacement available the truck must not be stranded");
   assert.equal((await lonelyTruck.get()).data()?.currentStatus, "QUEUED");
   assert.ok(after.data()?.queueEnteredAt.toMillis() > now, "it returns to the back of the queue");
+
+  // Nothing in this run can ever be programmed, so it must not stay open.
+  const batches = await db.collection(`sites/${lonelySite}/programmingBatches`).get();
+  assert.equal(batches.docs[0].data().status, "EXPIRED", "a run nobody confirmed must close itself");
+});
+
+test("a run left open with every window expired is closed by the sweep", async () => {
+  const staleSite = `${siteId}-stale`;
+  const batchRef = db.doc(`sites/${staleSite}/programmingBatches/stale-batch`);
+  await batchRef.set({ siteId: staleSite, humanCode: "AV-STALE", status: "AWAITING_AVAILABILITY", requestedSize: 2 });
+  await Promise.all([
+    batchRef.collection("items").doc("item-1").set({ siteId: staleSite, batchId: "stale-batch", truckId: "t1", queueCycleId: "c1", availabilityStatus: "EXPIRED" }),
+    batchRef.collection("items").doc("item-2").set({ siteId: staleSite, batchId: "stale-batch", truckId: "t2", queueCycleId: "c2", availabilityStatus: "EXPIRED" })
+  ]);
+
+  assert.ok((await closeFinishedAvailabilityBatches()) >= 1);
+  assert.equal((await batchRef.get()).data()?.status, "EXPIRED");
+  assert.equal(await closeFinishedAvailabilityBatches(), 0, "the sweep leaves nothing to do twice");
+});
+
+test("a run with a truck still confirmed is left open for the officer to program", async () => {
+  const liveSite = `${siteId}-live`;
+  const batchRef = db.doc(`sites/${liveSite}/programmingBatches/live-batch`);
+  await batchRef.set({ siteId: liveSite, humanCode: "AV-LIVE", status: "AWAITING_AVAILABILITY", requestedSize: 2 });
+  await Promise.all([
+    batchRef.collection("items").doc("item-1").set({ siteId: liveSite, batchId: "live-batch", truckId: "t1", queueCycleId: "c1", availabilityStatus: "EXPIRED" }),
+    batchRef.collection("items").doc("item-2").set({ siteId: liveSite, batchId: "live-batch", truckId: "t2", queueCycleId: "c2", availabilityStatus: "CONFIRMED" })
+  ]);
+
+  await closeFinishedAvailabilityBatches();
+  assert.equal((await batchRef.get()).data()?.status, "AWAITING_AVAILABILITY");
 });
 
 test("a truck already stranded in AWAITING_REPLACEMENT is swept back into the queue", async () => {

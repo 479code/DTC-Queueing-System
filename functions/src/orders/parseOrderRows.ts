@@ -63,6 +63,14 @@ function stringValue(value: SheetCell): string | undefined {
   return result || undefined;
 }
 
+/** A spreadsheet date cell arrives as a Date, which stringifies horribly. */
+function dateValue(value: SheetCell): string | undefined {
+  if (value instanceof Date) {
+    return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }).format(value);
+  }
+  return stringValue(value);
+}
+
 function numberValue(value: SheetCell): number | undefined {
   if (typeof value === "number" && Number.isFinite(value)) return value;
   const parsed = Number(String(value ?? "").replaceAll(",", "").trim());
@@ -146,7 +154,7 @@ export function parseOrderRows(rows: SheetCell[][], maxRows = 500): ParsedOrderS
       contactNumber: stringValue(cell(row, "contactNumber")),
       licenceNumber: stringValue(cell(row, "licenceNumber")),
       volume: numberValue(cell(row, "volume")),
-      expectedDeliveryDate: stringValue(cell(row, "expectedDeliveryDate")),
+      expectedDeliveryDate: dateValue(cell(row, "expectedDeliveryDate")),
       rawData: Object.fromEntries(headers.map((header, columnIndex) => [
         String(header ?? `Column ${columnIndex + 1}`).trim() || `Column ${columnIndex + 1}`,
         rawValue(row[columnIndex])

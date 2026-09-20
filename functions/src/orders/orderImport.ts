@@ -88,8 +88,11 @@ export const processOrderImport = validatedCall(processOrderImportInputSchema, a
     const writer = db.bulkWriter();
     rows.forEach((row) => {
       const orderRef = ordersRef(data.siteId).doc();
+      // A column the workbook simply does not have arrives as undefined, which
+      // Firestore refuses outright. Leave those fields off the document.
+      const present = Object.fromEntries(Object.entries(row).filter(([, value]) => value !== undefined));
       writer.set(orderRef, {
-        ...row,
+        ...present,
         siteId: data.siteId,
         importId: data.importId,
         status: "AVAILABLE",
