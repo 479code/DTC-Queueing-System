@@ -5,6 +5,8 @@ import { AlertTriangle, CheckCircle2, Clock3, FileWarning, ListOrdered, LoaderCi
 import type { QueueEntryView, TruckView } from "../operations/api";
 import { StatusBadge } from "../operations/ui";
 import { recalculateMetrics, subscribeToAuditEvents, subscribeToDailyMetrics, type AuditEventView, type DailyMetricsView } from "./api";
+import { subscribeToProgrammedTrucks, type ProgrammedTruckView } from "../operations/api";
+import { serverNow } from "../../lib/time";
 
 function formatMinutes(value: number): string {
   if (value <= 0) return "0 min";
@@ -34,6 +36,7 @@ export function OverviewScreen({
 }) {
   const [metrics, setMetrics] = useState<DailyMetricsView | null>(null);
   const [events, setEvents] = useState<AuditEventView[]>([]);
+  const [programmed, setProgrammed] = useState<ProgrammedTruckView[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -43,6 +46,32 @@ export function OverviewScreen({
     if (!canViewAuditEvents) return;
     return subscribeToAuditEvents(siteId, demoMode, setEvents, setError);
   }, [canViewAuditEvents, demoMode, siteId]);
+
+  // Counts a person can check against another page are read from the same live
+  // data those pages use, so the Overview can never disagree with them. Only
+  // figures that need a whole day's aggregation come from the daily summary.
+  useEffect(() => {
+    if (demoMode) return;
+    return subscribeToProgrammedTrucks(siteId, setProgrammed, () => setProgrammed([]));
+  }, [demoMode, siteId]);
+
+  const live = useMemo(() => {
+    const today = new Date(serverNow()).toDateString();
+    const programmedToday = programmed.filter((record) => new Date(record.programmedAtMillis).toDateString() === today);
+    const longestWaitMinutes = queue.reduce((longest, entry) => {
+      const waited = Math.floor((serverNow() - entry.queueEnteredAtMillis) / 60000);
+      return waited > longest ? waited : longest;
+    }, 0);
+    return {
+      queuedCount: queue.length,
+      longestWaitMinutes,
+      awaitingAvailability: trucks.filter((truck) => truck.currentStatus === "AWAITING_AVAILABILITY").length,
+      insuranceHoldCount: trucks.filter((truck) => truck.currentStatus === "INSURANCE_HOLD").length,
+      programmedCount: programmedToday.length,
+      dispatchedCount: programmedToday.filter((record) => record.status === "DISPATCHED").length,
+      awaitingDispatch: programmed.filter((record) => record.status === "PROGRAMMED").length
+    };
+  }, [programmed, queue, trucks]);
 
   const attentionTrucks = useMemo(
     () => trucks.filter((truck) => truck.insuranceStatus === "EXPIRED" || truck.insuranceStatus === "EXPIRING_SOON").slice(0, 4),
@@ -71,12 +100,12 @@ export function OverviewScreen({
     {display ? <>
       <section className="overviewPulse"><div><span>Live queue focus</span><h2>{queue[0] ? `${queue[0].registrationNumber} is next in the FIFO queue` : "No trucks are currently waiting"}</h2><p>{queue[0] ? `Position #${queue[0].position} · ${queue[0].driverName} · ${queue[0].fleetOfficerName}` : "New returns will appear here once their queue entry is confirmed."}</p></div><div className="overviewPulseStats"><span><b>{display.queuedCount}</b> waiting</span><span><b>{formatMinutes(display.longestCurrentWaitMinutes)}</b> longest wait</span></div><a className="overviewPulseAction" href="#queue">Open live queue</a></section>
       <section className="overviewMetrics overviewStatusGrid" aria-label="Daily operational metrics">
-        <div><ListOrdered /><span>Queued</span><strong>{display.queuedCount}</strong><small>{display.longestCurrentWaitMinutes ? `Longest wait ${formatMinutes(display.longestCurrentWaitMinutes)}` : "No active wait"}</small></div>
-        <div><Truck /><span>Programmed</span><strong>{display.programmedCount}</strong><small>{display.fifoProgrammingCount} FIFO today</small></div>
-        <div><CheckCircle2 /><span>Dispatched today</span><strong>{display.dispatchedCount}</strong><small>Average wait {formatMinutes(display.averageQueueWaitMinutes)}</small></div>
-        <div><ShieldAlert /><span>Insurance holds</span><strong>{display.insuranceHoldCount}</strong><small>Requires fleet attention</small></div>
-        <div><Clock3 /><span>FIFO compliance</span><strong>{display.fifoCompliancePercent}%</strong><small>{display.bypassProgrammingCount} approved bypasses</small></div>
-        <div className={display.dispatchExceptionCount > 0 ? "criticalMetric" : undefined}><FileWarning /><span>Dispatch exceptions</span><strong>{display.dispatchExceptionCount}</strong><small>{display.bypassRequestedCount} bypass requests today</small></div>
+        <div><ListOrdered /><span>In the line</span><strong>{demoMode ? display.queuedCount : live.queuedCount}</strong><small>{(demoMode ? display.longestCurrentWaitMinutes : live.longestWaitMinutes) ? `Longest wait ${formatMinutes(demoMode ? display.longestCurrentWaitMinutes : live.longestWaitMinutes)}` : "No active wait"}</small></div>
+        <div><Truck /><span>Programmed today</span><strong>{demoMode ? display.programmedCount : live.programmedCount}</strong><small>{demoMode ? `${display.fifoProgrammingCount} FIFO today` : `${live.awaitingDispatch} waiting to load`}</small></div>
+        <div><CheckCircle2 /><span>Dispatched today</span><strong>{demoMode ? display.dispatchedCount : live.dispatchedCount}</strong><small>{live.awaitingAvailability ? `${live.awaitingAvailability} awaiting confirmation` : "All confirmations answered"}</small></div>
+        <div className={(demoMode ? display.insuranceHoldCount : live.insuranceHoldCount) > 0 ? "criticalMetric" : undefined}><ShieldAlert /><span>Insurance holds</span><strong>{demoMode ? display.insuranceHoldCount : live.insuranceHoldCount}</strong><small>Blocked from the queue</small></div>
+        <div><Clock3 /><span>FIFO compliance</span><strong>{display.fifoCompliancePercent}%</strong><small>{display.updatedAt ? `${display.bypassProgrammingCount} bypasses · as of ${display.updatedAt}` : "Not calculated yet today"}</small></div>
+        <div><FileWarning /><span>Bypass requests</span><strong>{display.bypassRequestedCount}</strong><small>{display.updatedAt ? `${display.bypassApprovedCount} approved · as of ${display.updatedAt}` : "Not calculated yet today"}</small></div>
       </section>
 
       <div className="overviewGrid">

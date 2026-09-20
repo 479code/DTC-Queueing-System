@@ -34,6 +34,8 @@ export type DailyMetricsView = {
   fifoCompliancePercent: number;
   averageQueueWaitMinutes: number;
   longestCurrentWaitMinutes: number;
+  /** When the summary was last calculated; blank if it never has been. */
+  updatedAt: string;
 };
 
 export type AuditEventView = {
@@ -51,6 +53,7 @@ export type AuditEventView = {
 };
 
 export const demoDailyMetrics: DailyMetricsView = {
+  updatedAt: "10 Sept, 23:55",
   id: "20260910",
   date: "2026-09-10",
   queuedCount: 10,
@@ -71,6 +74,7 @@ export const demoDailyMetrics: DailyMetricsView = {
 function emptyMetrics(id: string): DailyMetricsView {
   return {
     ...demoDailyMetrics,
+    updatedAt: "",
     id,
     date: `${id.slice(0, 4)}-${id.slice(4, 6)}-${id.slice(6, 8)}`,
     queuedCount: 0,
@@ -112,6 +116,7 @@ function formatTimestamp(value: unknown): string {
 
 function mapMetrics(data: DocumentData, fallbackId: string): DailyMetricsView {
   return {
+    updatedAt: data.updatedAt ? formatSiteTime(data.updatedAt) : "",
     id: fallbackId,
     date: String(data.date ?? fallbackId),
     queuedCount: Number(data.queuedCount ?? 0),
