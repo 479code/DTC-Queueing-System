@@ -186,3 +186,53 @@ test("order workbook rows keep leading zeroes and reject duplicates and blanks",
   assert.throws(() => parseOrderRows([header, [1, "0472438", ""]]), /missing SALES ORDER NO/i);
   assert.throws(() => parseOrderRows([["S/N", "TRUCK"], [1, "ABC 123 XY"]]), /must contain ATC NO and SALES ORDER NO/i);
 });
+
+test("a full twenty-truck batch programs in queue order", async () => {
+  const siteId = "rules-scale-site";
+  const now = Date.now();
+  const truckIds = Array.from({ length: 24 }, (unused, index) => `scale-truck-${String(index + 1).padStart(2, "0")}`);
+
+  await Promise.all(truckIds.map((id, index) => seedQueued(siteId, id, now - (24 - index) * 60000)));
+  await Promise.all(Array.from({ length: 20 }, (unused, index) => db.doc(`sites/${siteId}/orders/scale-order-${index + 1}`).set({
+    siteId, status: "AVAILABLE", atcNo: `06000${String(index + 1).padStart(2, "0")}`, salesOrderNo: `SO-${index + 1}`, createdAt: Timestamp.now()
+  })));
+
+  const started = await startAvailabilityBatch.run(request(siteId, programmerId, ["programmingOfficer"], { siteId, requestedSize: 20 }));
+  const items = await db.collection(`sites/${siteId}/programmingBatches/${started.batchId}/items`).get();
+  assert.equal(items.docs.length, 20);
+  assert.deepEqual(
+    items.docs.map((item) => item.data()).sort((left, right) => left.batchOrder - right.batchOrder).map((item) => item.truckId),
+    truckIds.slice(0, 20),
+    "the batch must take the first twenty trucks in queue order"
+  );
+
+  const stillQueued = await db.collection(`sites/${siteId}/queueCycles`).where("status", "==", "QUEUED").get();
+  assert.equal(stillQueued.docs.length, 4, "trucks outside the batch keep waiting");
+
+  for (const truckId of truckIds.slice(0, 20)) {
+    await confirmTruckAvailability.run(request(siteId, fleetOfficerId, ["fleetOfficer"], { siteId, batchId: started.batchId, queueCycleId: `${truckId}-cycle` }));
+  }
+
+  const confirmedItems = await db.collection(`sites/${siteId}/programmingBatches/${started.batchId}/items`).get();
+  const orderAssignments = confirmedItems.docs
+    .map((item) => item.data())
+    .sort((left, right) => left.batchOrder - right.batchOrder)
+    .map((item, index) => ({ queueCycleId: item.queueCycleId, orderId: `scale-order-${index + 1}` }));
+
+  const programmed = await confirmProgrammingWithOrders.run(request(siteId, programmerId, ["programmingOfficer"], {
+    siteId, batchId: started.batchId, orderAssignments
+  }));
+  assert.equal(programmed.confirmedSize, 20);
+
+  const [programmedCycles, remainingOrders, remainingQueue] = await Promise.all([
+    db.collection(`sites/${siteId}/queueCycles`).where("status", "==", "PROGRAMMED").get(),
+    db.collection(`sites/${siteId}/orders`).where("status", "==", "AVAILABLE").get(),
+    db.collection(`sites/${siteId}/queueCycles`).where("status", "==", "QUEUED").orderBy("queueEnteredAt", "asc").get()
+  ]);
+  assert.equal(programmedCycles.docs.length, 20);
+  assert.equal(remainingOrders.docs.length, 0, "every truck must carry one imported ATC");
+  assert.deepEqual(remainingQueue.docs.map((item) => item.data().truckId), truckIds.slice(20), "the remaining four keep their order");
+
+  const atcs = new Set(programmedCycles.docs.map((item) => item.data().atcNo));
+  assert.equal(atcs.size, 20, "no ATC may be used twice");
+});
